@@ -2,3 +2,6 @@
 org.springframework.context.ApplicationContextInitializer=\
 com.leone.chapter1.MyApplicationContextInitializer
 
+# ApplicationListener
+org.springframework.context.ApplicationListener=\
+com.leone.chapter1.MyApplicationListener

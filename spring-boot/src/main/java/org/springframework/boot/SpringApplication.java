@@ -263,6 +263,7 @@ public class SpringApplication {
 		//设置ApplicationContextInitializer接口的bean
 		setInitializers((Collection) getSpringFactoriesInstances(
 				ApplicationContextInitializer.class));
+		//设置ApplicationListener接口的bean
 		setListeners((Collection) getSpringFactoriesInstances(ApplicationListener.class));
 		this.mainApplicationClass = deduceMainApplicationClass();
 	}
@@ -305,32 +306,41 @@ public class SpringApplication {
 	 * @return a running {@link ApplicationContext}
 	 */
 	public ConfigurableApplicationContext run(String... args) {
+		//启动监听  （可以记录启动id,taskName,启动时间等）
 		StopWatch stopWatch = new StopWatch();
 		stopWatch.start();
 		ConfigurableApplicationContext context = null;
 		FailureAnalyzers analyzers = null;
+		//设置打开 java.awt.headless   java的headless模式
 		configureHeadlessProperty();
-		//设置SpringApplicationRunListeners
+		//设置SpringApplicationRunListeners  run事件监听
+		//他有一个默认的实现类EventPublishingRunListener  在spring-boot启动的时候  对外广播事件
 		SpringApplicationRunListeners listeners = getRunListeners(args);
 		listeners.started();
 		try {
-			//创建参数集合
+
 			ApplicationArguments applicationArguments = new DefaultApplicationArguments(
 					args);
+			//创建容器的环境
 			ConfigurableEnvironment environment = prepareEnvironment(listeners,
 					applicationArguments);
 			Banner printedBanner = printBanner(environment);
 			//启动ApplicationContext
 			context = createApplicationContext();
+			//创建故障分析器
 			analyzers = new FailureAnalyzers(context);
 			prepareContext(context, environment, listeners, applicationArguments,
 					printedBanner);
-			//调用context的refresh方法
+			//调用context的refresh方法  初始化ApplicationContext容器
 			refreshContext(context);
+			//容器启动以后的回调方法
 			afterRefresh(context, applicationArguments);
+			//发出容器启动成功的事件
 			listeners.finished(context, null);
+			//停止启动监听器
 			stopWatch.stop();
 			if (this.logStartupInfo) {
+				//生成启动日志  使用初始类
 				new StartupInfoLogger(this.mainApplicationClass)
 						.logStarted(getApplicationLog(), stopWatch);
 			}
@@ -346,6 +356,7 @@ public class SpringApplication {
 			SpringApplicationRunListeners listeners,
 			ApplicationArguments applicationArguments) {
 		// Create and configure the environment
+		//创建默认的ConfigurableEnvironment  根据是否是web环境创建
 		ConfigurableEnvironment environment = getOrCreateEnvironment();
 		configureEnvironment(environment, applicationArguments.getSourceArgs());
 		listeners.environmentPrepared(environment);
