@@ -1,0 +1,4 @@
+# Application Context Initializers
+org.springframework.context.ApplicationContextInitializer=\
+com.leone.chapter1.MyApplicationContextInitializer
+

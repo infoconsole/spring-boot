@@ -258,13 +258,22 @@ public class SpringApplication {
 		if (sources != null && sources.length > 0) {
 			this.sources.addAll(Arrays.asList(sources));
 		}
+		//记录是否是web环境
 		this.webEnvironment = deduceWebEnvironment();
+		//设置ApplicationContextInitializer接口的bean
 		setInitializers((Collection) getSpringFactoriesInstances(
 				ApplicationContextInitializer.class));
 		setListeners((Collection) getSpringFactoriesInstances(ApplicationListener.class));
 		this.mainApplicationClass = deduceMainApplicationClass();
 	}
 
+	/**
+	 * 判断是不是启动的web容器  方式就是查看
+	 * 根据		javax.servlet.Servlet
+	 *   org.springframework.web.context.ConfigurableWebApplicationContext 判断
+	 *   存在不存在
+	 * @return
+	 */
 	private boolean deduceWebEnvironment() {
 		for (String className : WEB_ENVIRONMENT_CLASSES) {
 			if (!ClassUtils.isPresent(className, null)) {
@@ -301,18 +310,22 @@ public class SpringApplication {
 		ConfigurableApplicationContext context = null;
 		FailureAnalyzers analyzers = null;
 		configureHeadlessProperty();
+		//设置SpringApplicationRunListeners
 		SpringApplicationRunListeners listeners = getRunListeners(args);
 		listeners.started();
 		try {
+			//创建参数集合
 			ApplicationArguments applicationArguments = new DefaultApplicationArguments(
 					args);
 			ConfigurableEnvironment environment = prepareEnvironment(listeners,
 					applicationArguments);
 			Banner printedBanner = printBanner(environment);
+			//启动ApplicationContext
 			context = createApplicationContext();
 			analyzers = new FailureAnalyzers(context);
 			prepareContext(context, environment, listeners, applicationArguments,
 					printedBanner);
+			//调用context的refresh方法
 			refreshContext(context);
 			afterRefresh(context, applicationArguments);
 			listeners.finished(context, null);
@@ -384,7 +397,7 @@ public class SpringApplication {
 		System.setProperty(SYSTEM_PROPERTY_JAVA_AWT_HEADLESS, System.getProperty(
 				SYSTEM_PROPERTY_JAVA_AWT_HEADLESS, Boolean.toString(this.headless)));
 	}
-
+	//新建SpringApplicationRunListeners
 	private SpringApplicationRunListeners getRunListeners(String[] args) {
 		Class<?>[] types = new Class<?>[] { SpringApplication.class, String[].class };
 		return new SpringApplicationRunListeners(logger, getSpringFactoriesInstances(
@@ -1166,6 +1179,7 @@ public class SpringApplication {
 	}
 
 	/**
+	 * 静态启动类
 	 * Static helper that can be used to run a {@link SpringApplication} from the
 	 * specified source using default settings.
 	 * @param source the source to load
