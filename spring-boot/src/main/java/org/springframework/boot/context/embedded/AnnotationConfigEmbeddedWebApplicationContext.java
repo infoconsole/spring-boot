@@ -16,6 +16,7 @@
 
 package org.springframework.boot.context.embedded;
 
+import org.springframework.beans.factory.config.BeanFactoryPostProcessor;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.beans.factory.support.BeanNameGenerator;
 import org.springframework.context.annotation.AnnotatedBeanDefinitionReader;
@@ -174,6 +175,11 @@ public class AnnotationConfigEmbeddedWebApplicationContext
 	protected void prepareRefresh() {
 		this.scanner.clearCache();
 		super.prepareRefresh();
+	}
+
+	@Override
+	public void addBeanFactoryPostProcessor(BeanFactoryPostProcessor postProcessor) {
+		super.addBeanFactoryPostProcessor(postProcessor);
 	}
 
 	@Override

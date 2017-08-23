@@ -57,6 +57,7 @@ public class PropertySourcesLoader {
 	/**
 	 * Create a new {@link PropertySourceLoader} instance backed by the specified
 	 * {@link MutablePropertySources}.
+	 *
 	 * @param propertySources the destination property sources
 	 */
 	public PropertySourcesLoader(MutablePropertySources propertySources) {
@@ -68,6 +69,7 @@ public class PropertySourcesLoader {
 
 	/**
 	 * Load the specified resource (if possible) and add it as the first source.
+	 *
 	 * @param resource the source resource (may be {@code null}).
 	 * @return the loaded property source or {@code null}
 	 * @throws IOException if the source cannot be loaded
@@ -79,8 +81,9 @@ public class PropertySourcesLoader {
 	/**
 	 * Load the profile-specific properties from the specified resource (if any) and add
 	 * it as the first source.
+	 *
 	 * @param resource the source resource (may be {@code null}).
-	 * @param profile a specific profile to load or {@code null} to load the default.
+	 * @param profile  a specific profile to load or {@code null} to load the default.
 	 * @return the loaded property source or {@code null}
 	 * @throws IOException if the source cannot be loaded
 	 */
@@ -91,9 +94,10 @@ public class PropertySourcesLoader {
 	/**
 	 * Load the profile-specific properties from the specified resource (if any), give the
 	 * name provided and add it as the first source.
+	 *
 	 * @param resource the source resource (may be {@code null}).
-	 * @param name the root property name (may be {@code null}).
-	 * @param profile a specific profile to load or {@code null} to load the default.
+	 * @param name     the root property name (may be {@code null}).
+	 * @param profile  a specific profile to load or {@code null} to load the default.
 	 * @return the loaded property source or {@code null}
 	 * @throws IOException if the source cannot be loaded
 	 */
@@ -111,17 +115,19 @@ public class PropertySourcesLoader {
 	 * groups afterwards (with the highest priority last). Property resolution from the
 	 * resulting sources will consider all keys for a given group first and then move to
 	 * the next group.
+	 *
 	 * @param resource the source resource (may be {@code null}).
-	 * @param group an identifier for the group that this source belongs to
-	 * @param name the root property name (may be {@code null}).
-	 * @param profile a specific profile to load or {@code null} to load the default.
+	 * @param group    an identifier for the group that this source belongs to
+	 * @param name     the root property name (may be {@code null}).
+	 * @param profile  a specific profile to load or {@code null} to load the default.
 	 * @return the loaded property source or {@code null}
 	 * @throws IOException if the source cannot be loaded
 	 */
 	public PropertySource<?> load(Resource resource, String group, String name,
-			String profile) throws IOException {
+								  String profile) throws IOException {
 		if (isFile(resource)) {
 			String sourceName = generatePropertySourceName(name, profile);
+			System.out.println("profiles sourceName=" + sourceName);
 			for (PropertySourceLoader loader : this.loaders) {
 				if (canLoadFileExtension(loader, resource)) {
 					PropertySource<?> specific = loader.load(sourceName, resource,
@@ -154,7 +160,7 @@ public class PropertySourcesLoader {
 	}
 
 	private void addPropertySource(String basename, PropertySource<?> source,
-			String profile) {
+								   String profile) {
 
 		if (source == null) {
 			return;
@@ -170,8 +176,7 @@ public class PropertySourcesLoader {
 		logger.trace("Adding PropertySource: " + source + " in group: " + basename);
 		if (this.propertySources.contains(group.getName())) {
 			this.propertySources.replace(group.getName(), group);
-		}
-		else {
+		} else {
 			this.propertySources.addFirst(group);
 		}
 
@@ -189,6 +194,7 @@ public class PropertySourcesLoader {
 
 	/**
 	 * Return the {@link MutablePropertySources} being loaded.
+	 *
 	 * @return the property sources
 	 */
 	public MutablePropertySources getPropertySources() {
@@ -197,6 +203,7 @@ public class PropertySourcesLoader {
 
 	/**
 	 * Returns all file extensions that could be loaded.
+	 *
 	 * @return the file extensions
 	 */
 	public Set<String> getAllFileExtensions() {

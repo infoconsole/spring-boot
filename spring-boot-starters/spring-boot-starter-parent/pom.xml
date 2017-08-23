@@ -2,6 +2,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<modules>
 		<module>../../Leone-Chapter1</module>
+		<module>../../Leone-Chapter-Profiles</module>
 	</modules>
 	<parent>
 		<groupId>org.springframework.boot</groupId>

@@ -477,6 +477,7 @@ public class SpringApplication {
 	protected void configureEnvironment(ConfigurableEnvironment environment,
 			String[] args) {
 		configurePropertySources(environment, args);
+		//profiles
 		configureProfiles(environment, args);
 	}
 
@@ -524,10 +525,12 @@ public class SpringApplication {
 	protected void configurePropertySources(ConfigurableEnvironment environment,
 			String[] args) {
 		MutablePropertySources sources = environment.getPropertySources();
+		//设置默认的defaultProperties属性
 		if (this.defaultProperties != null && !this.defaultProperties.isEmpty()) {
 			sources.addLast(
 					new MapPropertySource("defaultProperties", this.defaultProperties));
 		}
+		//增加参数的defaultProperties
 		if (this.addCommandLineProperties && args.length > 0) {
 			String name = CommandLinePropertySource.COMMAND_LINE_PROPERTY_SOURCE_NAME;
 			if (sources.contains(name)) {
