@@ -137,6 +137,7 @@ public class RandomValuePropertySource extends PropertySource<Random> {
 	}
 
 	public static void addToEnvironment(ConfigurableEnvironment environment) {
+		//把一个名字叫random的属性封装添加到systemEnvironment后面
 		environment.getPropertySources().addAfter(
 				StandardEnvironment.SYSTEM_ENVIRONMENT_PROPERTY_SOURCE_NAME,
 				new RandomValuePropertySource(RANDOM_PROPERTY_SOURCE_NAME));

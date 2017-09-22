@@ -201,26 +201,32 @@ public class LoggingApplicationListener implements GenericApplicationListener {
 
 	@Override
 	public void onApplicationEvent(ApplicationEvent event) {
+		//在springboot启动的时候
 		if (event instanceof ApplicationStartedEvent) {
 			onApplicationStartedEvent((ApplicationStartedEvent) event);
 		}
+		//springboot的Environment环境准备完成的时候
 		else if (event instanceof ApplicationEnvironmentPreparedEvent) {
 			onApplicationEnvironmentPreparedEvent(
 					(ApplicationEnvironmentPreparedEvent) event);
 		}
+		//在springboot容器的环境设置完成以后
 		else if (event instanceof ApplicationPreparedEvent) {
 			onApplicationPreparedEvent((ApplicationPreparedEvent) event);
 		}
+		//容器关闭的时候
 		else if (event instanceof ContextClosedEvent && ((ContextClosedEvent) event)
 				.getApplicationContext().getParent() == null) {
 			onContextClosedEvent();
 		}
+		//容器启动失败的时候
 		else if (event instanceof ApplicationFailedEvent) {
 			onApplicationFailedEvent();
 		}
 	}
 
 	private void onApplicationStartedEvent(ApplicationStartedEvent event) {
+		//获取LoggingSystem  如果没有配置
 		this.loggingSystem = LoggingSystem
 				.get(event.getSpringApplication().getClassLoader());
 		this.loggingSystem.beforeInitialize();
@@ -263,14 +269,19 @@ public class LoggingApplicationListener implements GenericApplicationListener {
 	 */
 	protected void initialize(ConfigurableEnvironment environment,
 			ClassLoader classLoader) {
+		//设置相关的环境参数SystemProperty
 		new LoggingSystemProperties(environment).apply();
 		LogFile logFile = LogFile.get(environment);
 		if (logFile != null) {
 			logFile.applyToSystemProperties();
 		}
+		//environment参数debug   trace  设置日志级别
 		initializeEarlyLoggingLevel(environment);
+		//environment参数logging.config
 		initializeSystem(environment, this.loggingSystem, logFile);
+		//设置springboot默认的一些日志级别
 		initializeFinalLoggingLevels(environment, this.loggingSystem);
+		//注册ShutdownHook
 		registerShutdownHookIfNecessary(environment, this.loggingSystem);
 	}
 

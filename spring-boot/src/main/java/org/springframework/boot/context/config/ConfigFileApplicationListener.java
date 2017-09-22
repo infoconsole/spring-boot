@@ -201,6 +201,7 @@ public class ConfigFileApplicationListener implements EnvironmentPostProcessor,
 
 	/**
 	 * Add config file property sources to the specified environment.
+	 * 将配置文件属性源添加到指定的环境
 	 * @param environment the environment to add source to
 	 * @param resourceLoader the resource loader
 	 * @see #addPostProcessors(ConfigurableApplicationContext)
@@ -330,6 +331,7 @@ public class ConfigFileApplicationListener implements EnvironmentPostProcessor,
 
 		Loader(ConfigurableEnvironment environment, ResourceLoader resourceLoader) {
 			this.environment = environment;
+			//设置resourceLoader
 			this.resourceLoader = resourceLoader == null ? new DefaultResourceLoader()
 					: resourceLoader;
 		}
@@ -343,6 +345,7 @@ public class ConfigFileApplicationListener implements EnvironmentPostProcessor,
 			// Pre-existing active profiles set via Environment.setActiveProfiles()
 			// are additional profiles and config files are allowed to add more if
 			// they want to, so don't call addActiveProfiles() here.
+			// 1.把环境中的profiles取出来
 			Set<Profile> initialActiveProfiles = initializeActiveProfiles();
 			this.profiles.addAll(getUnprocessedActiveProfiles(initialActiveProfiles));
 			if (this.profiles.isEmpty()) {
@@ -357,10 +360,13 @@ public class ConfigFileApplicationListener implements EnvironmentPostProcessor,
 			// The default profile for these purposes is represented as null. We add it
 			// last so that it is first out of the queue (active profiles will then
 			// override any settings in the defaults when the list is reversed later).
+			// 2.增加了默认的profiles  null
 			this.profiles.add(null);
 
+			//3.循环处理profiles，查找文件位置然后去加载文件
 			while (!this.profiles.isEmpty()) {
 				Profile profile = this.profiles.poll();
+				//位置查找方法
 				for (String location : getSearchLocations()) {
 					if (!location.endsWith("/")) {
 						// location is a filename already, so don't search for more
@@ -375,7 +381,7 @@ public class ConfigFileApplicationListener implements EnvironmentPostProcessor,
 				}
 				this.processedProfiles.add(profile);
 			}
-
+			//4.增加ConfigurationProperties
 			addConfigurationProperties(this.propertiesLoader.getPropertySources());
 		}
 
@@ -585,10 +591,11 @@ public class ConfigFileApplicationListener implements EnvironmentPostProcessor,
 			profiles.addAll(Arrays.asList(environment.getActiveProfiles()));
 			environment.setActiveProfiles(profiles.toArray(new String[profiles.size()]));
 		}
-
+		//查找Locations
 		private Set<String> getSearchLocations() {
 			Set<String> locations = new LinkedHashSet<String>();
 			// User-configured settings take precedence, so we do them first
+			// 如果配置了
 			if (this.environment.containsProperty(CONFIG_LOCATION_PROPERTY)) {
 				for (String path : asResolvedSet(
 						this.environment.getProperty(CONFIG_LOCATION_PROPERTY), null)) {
