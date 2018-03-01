@@ -4,7 +4,7 @@
 	<parent>
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-deployment-tests</artifactId>
-		<version>1.5.5.BUILD-SNAPSHOT</version>
+		<version>1.5.11.BUILD-SNAPSHOT</version>
 	</parent>
 	<artifactId>spring-boot-deployment-test-tomee</artifactId>
 	<packaging>war</packaging>
@@ -19,12 +19,7 @@
 		<main.basedir>${basedir}/../..</main.basedir>
 		<tomee.version>1.7.4</tomee.version>
 		<cargo.container.id>tomee1x</cargo.container.id>
-		<cargo.container.url>
-			https://www.apache.org/dist/tomee/tomee-${tomee.version}/apache-tomee-${tomee.version}-webprofile.zip
-			<!-- Alternative location
-			http://archive.apache.org/dist/tomee/tomee-${tomee.version}/apache-tomee-${tomee.version}-webprofile.zip
-			 -->
-		</cargo.container.url>
+		<cargo.container.url>https://archive.apache.org/dist/tomee/tomee-${tomee.version}/apache-tomee-${tomee.version}-webprofile.zip</cargo.container.url>
 	</properties>
 	<dependencies>
 		<dependency>

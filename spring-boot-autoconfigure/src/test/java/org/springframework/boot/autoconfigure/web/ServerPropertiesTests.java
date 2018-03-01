@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2017 the original author or authors.
+ * Copyright 2012-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@ import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
 
 import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
@@ -32,6 +33,7 @@ import javax.servlet.SessionTrackingMode;
 import org.apache.catalina.Context;
 import org.apache.catalina.Valve;
 import org.apache.catalina.valves.AccessLogValve;
+import org.apache.catalina.valves.ErrorReportValve;
 import org.apache.catalina.valves.RemoteIpValve;
 import org.apache.coyote.AbstractProtocol;
 import org.junit.Before;
@@ -42,10 +44,10 @@ import org.mockito.MockitoAnnotations;
 
 import org.springframework.beans.MutablePropertyValues;
 import org.springframework.boot.bind.RelaxedDataBinder;
+import org.springframework.boot.context.embedded.AbstractEmbeddedServletContainerFactory;
 import org.springframework.boot.context.embedded.ConfigurableEmbeddedServletContainer;
 import org.springframework.boot.context.embedded.EmbeddedServletContainer;
 import org.springframework.boot.context.embedded.jetty.JettyEmbeddedServletContainerFactory;
-import org.springframework.boot.context.embedded.tomcat.TomcatContextCustomizer;
 import org.springframework.boot.context.embedded.tomcat.TomcatEmbeddedServletContainer;
 import org.springframework.boot.context.embedded.tomcat.TomcatEmbeddedServletContainerFactory;
 import org.springframework.boot.context.embedded.undertow.UndertowEmbeddedServletContainerFactory;
@@ -53,9 +55,7 @@ import org.springframework.boot.web.servlet.ServletContextInitializer;
 import org.springframework.mock.env.MockEnvironment;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.BDDMockito.given;
 import static org.mockito.Matchers.anyBoolean;
-import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
@@ -236,6 +236,25 @@ public class ServerPropertiesTests {
 	}
 
 	@Test
+	public void errorReportValveIsConfiguredToNotReportStackTraces() {
+		TomcatEmbeddedServletContainerFactory tomcatContainer = new TomcatEmbeddedServletContainerFactory();
+		Map<String, String> map = new HashMap<String, String>();
+		bindProperties(map);
+		this.properties.customize(tomcatContainer);
+		Valve[] valves = ((TomcatEmbeddedServletContainer) tomcatContainer
+				.getEmbeddedServletContainer()).getTomcat().getHost().getPipeline()
+						.getValves();
+		assertThat(valves).hasAtLeastOneElementOfType(ErrorReportValve.class);
+		for (Valve valve : valves) {
+			if (valve instanceof ErrorReportValve) {
+				ErrorReportValve errorReportValve = (ErrorReportValve) valve;
+				assertThat(errorReportValve.isShowReport()).isFalse();
+				assertThat(errorReportValve.isShowServerInfo()).isFalse();
+			}
+		}
+	}
+
+	@Test
 	public void redirectContextRootIsNotConfiguredByDefault() throws Exception {
 		bindProperties(new HashMap<String, String>());
 		ServerProperties.Tomcat tomcat = this.properties.getTomcat();
@@ -249,14 +268,10 @@ public class ServerPropertiesTests {
 		bindProperties(map);
 		ServerProperties.Tomcat tomcat = this.properties.getTomcat();
 		assertThat(tomcat.getRedirectContextRoot()).isEqualTo(false);
-		TomcatEmbeddedServletContainerFactory container = new TomcatEmbeddedServletContainerFactory();
-		this.properties.customize(container);
-		Context context = mock(Context.class);
-		for (TomcatContextCustomizer customizer : container
-				.getTomcatContextCustomizers()) {
-			customizer.customize(context);
-		}
-		verify(context).setMapperContextRootRedirectEnabled(false);
+		TomcatEmbeddedServletContainerFactory factory = new TomcatEmbeddedServletContainerFactory();
+		Context context = (Context) ((TomcatEmbeddedServletContainer) factory
+				.getEmbeddedServletContainer()).getTomcat().getHost().findChildren()[0];
+		assertThat(context.getMapperContextRootRedirectEnabled()).isTrue();
 	}
 
 	@Test
@@ -299,7 +314,22 @@ public class ServerPropertiesTests {
 	}
 
 	@Test
-	public void customizeSessionProperties() throws Exception {
+	public void customizeSessionPropertiesWithJetty() throws Exception {
+		customizeSessionProperties(new TomcatEmbeddedServletContainerFactory(0));
+	}
+
+	@Test
+	public void customizeSessionPropertiesWithTomcat() throws Exception {
+		customizeSessionProperties(new TomcatEmbeddedServletContainerFactory(0));
+	}
+
+	@Test
+	public void customizeSessionPropertiesWithUndertow() throws Exception {
+		customizeSessionProperties(new UndertowEmbeddedServletContainerFactory(0));
+	}
+
+	private void customizeSessionProperties(
+			AbstractEmbeddedServletContainerFactory factory) {
 		Map<String, String> map = new HashMap<String, String>();
 		map.put("server.session.timeout", "123");
 		map.put("server.session.tracking-modes", "cookie,url");
@@ -311,38 +341,80 @@ public class ServerPropertiesTests {
 		map.put("server.session.cookie.secure", "true");
 		map.put("server.session.cookie.max-age", "60");
 		bindProperties(map);
-		ConfigurableEmbeddedServletContainer factory = mock(
-				ConfigurableEmbeddedServletContainer.class);
-		ServletContext servletContext = mock(ServletContext.class);
-		SessionCookieConfig sessionCookieConfig = mock(SessionCookieConfig.class);
-		given(servletContext.getSessionCookieConfig()).willReturn(sessionCookieConfig);
 		this.properties.customize(factory);
-		triggerInitializers(factory, servletContext);
-		verify(factory).setSessionTimeout(123);
-		verify(servletContext).setSessionTrackingModes(
-				EnumSet.of(SessionTrackingMode.COOKIE, SessionTrackingMode.URL));
-		verify(sessionCookieConfig).setName("testname");
-		verify(sessionCookieConfig).setDomain("testdomain");
-		verify(sessionCookieConfig).setPath("/testpath");
-		verify(sessionCookieConfig).setComment("testcomment");
-		verify(sessionCookieConfig).setHttpOnly(true);
-		verify(sessionCookieConfig).setSecure(true);
-		verify(sessionCookieConfig).setMaxAge(60);
+		final AtomicReference<ServletContext> servletContextReference = new AtomicReference<ServletContext>();
+		EmbeddedServletContainer container = factory
+				.getEmbeddedServletContainer(new ServletContextInitializer() {
+
+					@Override
+					public void onStartup(ServletContext servletContext)
+							throws ServletException {
+						servletContextReference.set(servletContext);
+					}
+
+				});
+		try {
+			container.start();
+			SessionCookieConfig sessionCookieConfig = servletContextReference.get()
+					.getSessionCookieConfig();
+			assertThat(factory.getSessionTimeout()).isEqualTo(123);
+			assertThat(sessionCookieConfig.getName()).isEqualTo("testname");
+			assertThat(sessionCookieConfig.getDomain()).isEqualTo("testdomain");
+			assertThat(sessionCookieConfig.getPath()).isEqualTo("/testpath");
+			assertThat(sessionCookieConfig.getComment()).isEqualTo("testcomment");
+			assertThat(sessionCookieConfig.isHttpOnly()).isTrue();
+			assertThat(sessionCookieConfig.isSecure()).isTrue();
+			assertThat(sessionCookieConfig.getMaxAge()).isEqualTo(60);
+			assertThat(servletContextReference.get().getEffectiveSessionTrackingModes())
+					.isEqualTo(EnumSet.of(SessionTrackingMode.COOKIE,
+							SessionTrackingMode.URL));
+		}
+		finally {
+			container.stop();
+		}
 	}
 
-	private void triggerInitializers(ConfigurableEmbeddedServletContainer container,
-			ServletContext servletContext) throws ServletException {
-		verify(container, atLeastOnce())
-				.addInitializers(this.initializersCaptor.capture());
-		for (Object initializers : this.initializersCaptor.getAllValues()) {
-			if (initializers instanceof ServletContextInitializer) {
-				((ServletContextInitializer) initializers).onStartup(servletContext);
-			}
-			else {
-				for (ServletContextInitializer initializer : (ServletContextInitializer[]) initializers) {
-					initializer.onStartup(servletContext);
-				}
-			}
+	@Test
+	public void sslSessionTrackingWithJetty() throws Exception {
+		sslSessionTracking(new JettyEmbeddedServletContainerFactory(0));
+	}
+
+	@Test
+	public void sslSessionTrackingWithTomcat() throws Exception {
+		sslSessionTracking(new TomcatEmbeddedServletContainerFactory(0));
+	}
+
+	@Test
+	public void sslSessionTrackingWithUndertow() throws Exception {
+		sslSessionTracking(new UndertowEmbeddedServletContainerFactory(0));
+	}
+
+	private void sslSessionTracking(AbstractEmbeddedServletContainerFactory factory) {
+		Map<String, String> map = new HashMap<String, String>();
+		map.put("server.ssl.enabled", "true");
+		map.put("server.ssl.key-store", "src/test/resources/test.jks");
+		map.put("server.ssl.key-password", "password");
+		map.put("server.session.tracking-modes", "ssl");
+		bindProperties(map);
+		this.properties.customize(factory);
+		final AtomicReference<ServletContext> servletContextReference = new AtomicReference<ServletContext>();
+		EmbeddedServletContainer container = factory
+				.getEmbeddedServletContainer(new ServletContextInitializer() {
+
+					@Override
+					public void onStartup(ServletContext servletContext)
+							throws ServletException {
+						servletContextReference.set(servletContext);
+					}
+
+				});
+		try {
+			container.start();
+			assertThat(servletContextReference.get().getEffectiveSessionTrackingModes())
+					.isEqualTo(EnumSet.of(SessionTrackingMode.SSL));
+		}
+		finally {
+			container.stop();
 		}
 	}
 
@@ -528,7 +600,7 @@ public class ServerPropertiesTests {
 		embeddedContainer.start();
 		try {
 			assertThat(((AbstractProtocol<?>) embeddedContainer.getTomcat().getConnector()
-					.getProtocolHandler()).getBacklog()).isEqualTo(10);
+					.getProtocolHandler()).getAcceptCount()).isEqualTo(10);
 		}
 		finally {
 			embeddedContainer.stop();

@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2016 the original author or authors.
+ * Copyright 2012-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package org.springframework.boot.autoconfigure.jdbc;
 
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.Locale;
 
 import javax.sql.DataSource;
 
@@ -106,7 +107,7 @@ public enum EmbeddedDatabaseConnection {
 	 */
 	public String getUrl(String databaseName) {
 		Assert.hasText(databaseName, "DatabaseName must not be null.");
-		return String.format(this.url, databaseName);
+		return (this.url != null ? String.format(this.url, databaseName) : null);
 	}
 
 	/**
@@ -173,7 +174,7 @@ public enum EmbeddedDatabaseConnection {
 			if (productName == null) {
 				return false;
 			}
-			productName = productName.toUpperCase();
+			productName = productName.toUpperCase(Locale.ENGLISH);
 			EmbeddedDatabaseConnection[] candidates = EmbeddedDatabaseConnection.values();
 			for (EmbeddedDatabaseConnection candidate : candidates) {
 				if (candidate != NONE && productName.contains(candidate.name())) {

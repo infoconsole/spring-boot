@@ -115,6 +115,27 @@ refreshed using `EnvironmentPostProcessor`. Each implementation should be regist
 	org.springframework.boot.env.EnvironmentPostProcessor=com.example.YourEnvironmentPostProcessor
 ----
 
+The implementation can load arbitrary files and add them to the `Environment`. For
+instance, this example loads a YAML configuration file from the classpath:
+
+
+[source,java,indent=0]
+----
+include::{code-examples}/context/EnvironmentPostProcessorExample.java[tag=example]
+----
+
+TIP: The `Environment` will already have been prepared with all the usual property sources
+that Spring Boot loads by default. It is therefore possible to get the location of the
+file from the environment. This example adds the `custom-resource` property source at the
+end of the list so that a key defined in any of the usual other locations takes
+precedence. A custom implementation may obviously defines another order.
+
+NOTE: While using `@PropertySource` on your `@SpringBootApplication` seems convenient and
+easy enough to load a custom resource in the `Environment`, we do not recommend it as
+Spring Boot prepares the `Environment` before the `ApplicationContext` is refreshed. Any
+key defined via `@PropertySource` will be loaded too late to have any effect on
+auto-configuration.
+
 
 
 [[howto-build-an-application-context-hierarchy]]
@@ -165,6 +186,9 @@ Maven '`project properties`' via `@..@` placeholders, e.g.
 	app.encoding=@project.build.sourceEncoding@
 	app.java.version=@java.version@
 ----
+
+NOTE: Only production configuration is filtered that way (i.e. no filtering is applied on
+`src/test/resources`).
 
 TIP: The `spring-boot:run` can add `src/main/resources` directly to the classpath
 (for hot reloading purposes) if you enable the `addResources` flag. This circumvents
@@ -1629,6 +1653,11 @@ requirements (e.g. including having Tomcat use `java.util.logging` but configuri
 output using Log4j 2). See the Actuator Log4j 2 samples for more detail and to see it in
 action.
 
+NOTE: To ensure that debug logging performed using `java.util.logging` is routed into
+Log4j 2, configure its https://logging.apache.org/log4j/2.0/log4j-jul/index.html[JDK
+logging adapter] by setting the `java.util.logging.manager` system property to
+`org.apache.logging.log4j.jul.LogManager`.
+
 
 
 [[howto-configure-log4j-for-logging-yaml-or-json-config]]
@@ -2006,7 +2035,7 @@ then you need to define your own `@Bean` of type `LocalEntityManagerFactoryBean`
 id '`entityManagerFactory`', and set the persistence unit name there.
 
 See
-https://github.com/spring-projects/spring-boot/blob/master/spring-boot-autoconfigure/src/main/java/org/springframework/boot/autoconfigure/orm/jpa/JpaBaseConfiguration.java[`JpaBaseConfiguration`]
+{sc-spring-boot-autoconfigure}/orm/jpa/JpaBaseConfiguration.{sc-ext}[`JpaBaseConfiguration`]
 for the default settings.
 
 
@@ -2037,7 +2066,7 @@ respectively.
 Spring Data REST can expose the `Repository` implementations as REST endpoints for you as
 long as Spring MVC has been enabled for the application.
 
-Spring Boot exposes as set of useful properties from the `spring.data.rest` namespace that
+Spring Boot exposes a set of useful properties from the `spring.data.rest` namespace that
 customize the
 {spring-data-rest-javadoc}/core/config/RepositoryRestConfiguration.{dc-ext}[`RepositoryRestConfiguration`].
 If you need to provide additional customization, you should use a
@@ -2068,6 +2097,19 @@ configured to depend on the `elasticsearchClient` bean:
 ----
 include::{code-examples}/elasticsearch/HibernateSearchElasticsearchExample.java[tag=configuration]
 ----
+
+
+
+[[howto-configure-jOOQ-with-multiple-datasources]]
+=== Configure jOOQ with Two DataSources
+If you need to use jOOQ with multiple data sources, you should create your own
+`DSLContext` for each, refer to
+{sc-spring-boot-autoconfigure}/jooq/JooqAutoConfiguration.{sc-ext}[JooqAutoConfiguration]
+for more details.
+
+TIP: In particular, `JooqExceptionTranslator` and `SpringTransactionProvider` can be
+reused to provide similar features to what the auto-configuration does with a single
+`DataSource`.
 
 
 
@@ -2112,30 +2154,24 @@ is a Hibernate feature (nothing to do with Spring).
 
 
 [[howto-initialize-a-database-using-spring-jdbc]]
-=== Initialize a database using Spring JDBC
-Spring JDBC has a `DataSource` initializer feature. Spring Boot enables it by default and
-loads SQL from the standard locations `schema.sql` and `data.sql` (in the root of the
-classpath). In addition Spring Boot will load the `schema-${platform}.sql`
-and `data-${platform}.sql` files (if present), where
-`platform` is the value of `spring.datasource.platform`, e.g. you might choose to set
-it to the vendor name of the database (`hsqldb`, `h2`, `oracle`, `mysql`,
-`postgresql` etc.). Spring Boot enables the fail-fast feature of the Spring JDBC
-initializer by default, so if the scripts cause exceptions the application will fail
-to start. The script locations can be changed by setting `spring.datasource.schema` and
-`spring.datasource.data`, and neither location will be processed if
-`spring.datasource.initialize=false`.
+=== Initialize a database
+Spring Boot can automatically create the schema (DDL scripts) of your `DataSource` and
+initialize it (DML scripts): it loads SQL from the standard root classpath locations
+`schema.sql` and `data.sql`, respectively. In addition Spring Boot will process the
+`schema-${platform}.sql` and `data-${platform}.sql` files (if present), where `platform`
+is the value of `spring.datasource.platform`. This allows you to switch to database
+specific scripts if necessary, e.g. you might choose to set it to the vendor name of the
+database (`hsqldb`, `h2`, `oracle`, `mysql`, `postgresql` etc.).
 
-To disable the fail-fast you can set `spring.datasource.continue-on-error=true`. This can be
-useful once an application has matured and been deployed a few times, since the scripts
-can act as '`poor man's migrations`' -- inserts that fail mean that the data is already
-there, so there would be no need to prevent the application from running, for instance.
+Spring Boot enables the fail-fast feature of the Spring JDBC initializer by default, so if
+the scripts cause exceptions the application will fail to start. You can tune that using
+`spring.datasource.continue-on-error`.
 
-If you want to use the `schema.sql` initialization in a JPA app (with
-Hibernate) then `ddl-auto=create-drop` will lead to errors if
-Hibernate tries to create the same tables.  To avoid those errors set
-`ddl-auto` explicitly to "" (preferable) or "none". Whether or not you use
-`ddl-auto=create-drop` you can always use `data.sql` to initialize new
-data.
+NOTE: In a JPA-based app, you can choose to let Hibernate create the schema or use
+`schema.sql` but not both. Make sure to disable `spring.jpa.hibernate.ddl-auto` if you
+chose the later.
+
+You can also disable initialization by setting `spring.datasource.initialize` to `false`.
 
 
 
@@ -2439,8 +2475,8 @@ by adding some entries to `application.properties`, e.g.
 
 [source,properties,indent=0]
 ----
-	server.tomcat.remote_ip_header=x-forwarded-for
-	server.tomcat.protocol_header=x-forwarded-proto
+	server.tomcat.remote-ip-header=x-forwarded-for
+	server.tomcat.protocol-header=x-forwarded-proto
 ----
 
 (The presence of either of those properties will switch on the valve. Or you can add the
@@ -2696,6 +2732,11 @@ https://plugins.gradle.org/plugin/com.gorylenko.gradle-git-properties[`gradle-gi
 		id "com.gorylenko.gradle-git-properties" version "1.4.17"
 	}
 ----
+
+TIP: The commit time in `git.properties` is expected to match the format
+`yyyy-MM-dd'T'HH:mm:ssZ`. This is the default format for both plugins listed above. Using this format
+allows the time to be parsed into a `Date` and its format when serialized to JSON to be controlled by
+Jackson's date serialization configuration settings.
 
 
 

@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2017 the original author or authors.
+ * Copyright 2012-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -316,8 +316,11 @@ public class UndertowEmbeddedServletContainerFactory
 				keyPassword = ssl.getKeyStorePassword().toCharArray();
 			}
 			keyManagerFactory.init(keyStore, keyPassword);
-			return getConfigurableAliasKeyManagers(ssl,
-					keyManagerFactory.getKeyManagers());
+			if (ssl.getKeyAlias() != null) {
+				return getConfigurableAliasKeyManagers(ssl,
+						keyManagerFactory.getKeyManagers());
+			}
+			return keyManagerFactory.getKeyManagers();
 		}
 		catch (Exception ex) {
 			throw new IllegalStateException(ex);
@@ -491,7 +494,7 @@ public class UndertowEmbeddedServletContainerFactory
 		resourceManagers.add(rootResourceManager);
 		for (URL url : metaInfResourceUrls) {
 			if ("file".equals(url.getProtocol())) {
-				File file = new File(url.getFile());
+				File file = new File(getDecodedFile(url));
 				if (file.isFile()) {
 					try {
 						resourceJarUrls.add(new URL("jar:" + url + "!/"));

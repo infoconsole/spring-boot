@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2017 the original author or authors.
+ * Copyright 2012-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,9 +30,11 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.charset.Charset;
+import java.security.CodeSource;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
+import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.Arrays;
@@ -673,6 +675,24 @@ public abstract class AbstractEmbeddedServletContainerFactoryTests {
 		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
 	}
 
+	@Test
+	public void codeSourceArchivePath() throws Exception {
+		AbstractEmbeddedServletContainerFactory factory = getFactory();
+		CodeSource codeSource = new CodeSource(new URL("file", "", "/some/test/path/"),
+				(Certificate[]) null);
+		File codeSourceArchive = factory.getCodeSourceArchive(codeSource);
+		assertThat(codeSourceArchive).isEqualTo(new File("/some/test/path/"));
+	}
+
+	@Test
+	public void codeSourceArchivePathContainingSpaces() throws Exception {
+		AbstractEmbeddedServletContainerFactory factory = getFactory();
+		CodeSource codeSource = new CodeSource(
+				new URL("file", "", "/test/path/with%20space/"), (Certificate[]) null);
+		File codeSourceArchive = factory.getCodeSourceArchive(codeSource);
+		assertThat(codeSourceArchive).isEqualTo(new File("/test/path/with space/"));
+	}
+
 	protected Ssl getSsl(ClientAuth clientAuth, String keyPassword, String keyStore) {
 		return getSsl(clientAuth, keyPassword, keyStore, null, null, null);
 	}
@@ -1104,13 +1124,13 @@ public abstract class AbstractEmbeddedServletContainerFactoryTests {
 
 	protected String getResponse(String url,
 			HttpComponentsClientHttpRequestFactory requestFactory, String... headers)
-					throws IOException, URISyntaxException {
+			throws IOException, URISyntaxException {
 		return getResponse(url, HttpMethod.GET, requestFactory, headers);
 	}
 
 	protected String getResponse(String url, HttpMethod method,
 			HttpComponentsClientHttpRequestFactory requestFactory, String... headers)
-					throws IOException, URISyntaxException {
+			throws IOException, URISyntaxException {
 		ClientHttpResponse response = getClientResponse(url, method, requestFactory,
 				headers);
 		try {
@@ -1142,7 +1162,7 @@ public abstract class AbstractEmbeddedServletContainerFactoryTests {
 
 	protected ClientHttpResponse getClientResponse(String url, HttpMethod method,
 			HttpComponentsClientHttpRequestFactory requestFactory, String... headers)
-					throws IOException, URISyntaxException {
+			throws IOException, URISyntaxException {
 		ClientHttpRequest request = requestFactory.createRequest(new URI(url), method);
 		request.getHeaders().add("Cookie", "JSESSIONID=" + "123");
 		for (String header : headers) {

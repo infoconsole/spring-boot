@@ -8,14 +8,14 @@ JPA for database access just include the `spring-boot-starter-data-jpa` dependen
 your project, and you are good to go.
 
 For complete details see the
-http://docs.spring.io/spring-boot/docs/current/reference/htmlsingle/#using-boot-starter-poms[reference documentation]
+http://docs.spring.io/spring-boot/docs/current/reference/htmlsingle/#using-boot-starter[reference documentation]
 
 == Community Contributions
 If you create a starter for a technology that is not already in the standard list we can
 list it here. Just send a pull request for this page.
 
 WARNING: While the
-http://docs.spring.io/spring-boot/docs/current/reference/htmlsingle/#using-boot-starter-poms[reference documentation]
+http://docs.spring.io/spring-boot/docs/current/reference/htmlsingle/#using-boot-starter[reference documentation]
 mentions that 3rd party starters should not start with `spring-boot`, some starters
 do as they were designed before this was clarified.
 
@@ -28,6 +28,9 @@ do as they were designed before this was clarified.
 | https://cxf.apache.org/docs/springboot.html[Apache CXF]
 | https://github.com/apache/cxf
 
+| https://qpid.apache.org/components/jms/[Apache Qpid]
+| https://github.com/amqphub/amqp-10-jms-spring-boot
+
 | http://wicket.apache.org/[Apache Wicket]
 | https://github.com/MarcGiffing/wicket-spring-boot
 
@@ -39,6 +42,9 @@ do as they were designed before this was clarified.
 
 | Charon reverse proxy
 | https://github.com/mkopylec/charon-spring-boot-starter
+
+| https://citrusframework.org/[Citrus] simulator
+| https://github.com/christophd/citrus-simulator
 
 | https://cloudant.com/[Cloudant]
 | https://github.com/icha024/cloudant-spring-boot-starter
@@ -63,6 +69,9 @@ do as they were designed before this was clarified.
 
 | http://hdiv.org/[HDIV]
 | https://github.com/hdiv/spring-boot-starter-hdiv
+
+| Hiatus for Spring Boot
+| https://github.com/jihor/hiatus-spring-boot
 
 | http://infinispan.org/[Infinispan]
 | https://github.com/infinispan/infinispan-spring-boot
@@ -114,6 +123,9 @@ do as they were designed before this was clarified.
 
 | https://github.com/oembedler/spring-graphql-common[Spring GraphQL] (GraphQL and GraphiQL)
 | https://github.com/oembedler/graphql-spring-boot
+
+| https://github.com/StripesFramework/stripes[Stripes]
+| https://github.com/juanpablo-santos/stripes-spring-boot
 
 | http://teiid.org/[Teiid]
 | https://github.com/teiid/teiid-spring-boot

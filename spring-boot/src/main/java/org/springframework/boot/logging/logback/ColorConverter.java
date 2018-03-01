@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2013 the original author or authors.
+ * Copyright 2012-2017 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,24 +41,24 @@ public class ColorConverter extends CompositeConverter<ILoggingEvent> {
 	private static final Map<String, AnsiElement> ELEMENTS;
 
 	static {
-		Map<String, AnsiElement> elements = new HashMap<String, AnsiElement>();
-		elements.put("faint", AnsiStyle.FAINT);
-		elements.put("red", AnsiColor.RED);
-		elements.put("green", AnsiColor.GREEN);
-		elements.put("yellow", AnsiColor.YELLOW);
-		elements.put("blue", AnsiColor.BLUE);
-		elements.put("magenta", AnsiColor.MAGENTA);
-		elements.put("cyan", AnsiColor.CYAN);
-		ELEMENTS = Collections.unmodifiableMap(elements);
+		Map<String, AnsiElement> ansiElements = new HashMap<String, AnsiElement>();
+		ansiElements.put("faint", AnsiStyle.FAINT);
+		ansiElements.put("red", AnsiColor.RED);
+		ansiElements.put("green", AnsiColor.GREEN);
+		ansiElements.put("yellow", AnsiColor.YELLOW);
+		ansiElements.put("blue", AnsiColor.BLUE);
+		ansiElements.put("magenta", AnsiColor.MAGENTA);
+		ansiElements.put("cyan", AnsiColor.CYAN);
+		ELEMENTS = Collections.unmodifiableMap(ansiElements);
 	}
 
 	private static final Map<Integer, AnsiElement> LEVELS;
 
 	static {
-		Map<Integer, AnsiElement> levels = new HashMap<Integer, AnsiElement>();
-		levels.put(Level.ERROR_INTEGER, AnsiColor.RED);
-		levels.put(Level.WARN_INTEGER, AnsiColor.YELLOW);
-		LEVELS = Collections.unmodifiableMap(levels);
+		Map<Integer, AnsiElement> ansiLevels = new HashMap<Integer, AnsiElement>();
+		ansiLevels.put(Level.ERROR_INTEGER, AnsiColor.RED);
+		ansiLevels.put(Level.WARN_INTEGER, AnsiColor.YELLOW);
+		LEVELS = Collections.unmodifiableMap(ansiLevels);
 	}
 
 	@Override

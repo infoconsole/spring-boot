@@ -48,7 +48,7 @@ such as the user that launched the application.
 
 
 
-[boot-features-startup-failure]
+[[boot-features-startup-failure]]
 === Startup failure
 If your application fails to start, registered `FailureAnalyzers` get a chance to provide
 a dedicated error message and a concrete action to fix the problem. For instance if you
@@ -242,6 +242,17 @@ Application events are sent in the following order, as your application runs:
 TIP: You often won't need to use application events, but it can be handy to know that they
 exist. Internally, Spring Boot uses events to handle a variety of tasks.
 
+Application events are sent using Spring Framework's event publishing mechanism. Part of
+this mechanism ensures that an event published to the listeners in a child context
+is also published to the listeners in any ancestors contexts. As a result of this, if
+your application uses a hierarchy of `SpringApplication` instances, a listener may
+receive multiple instances of the same type of application event.
+
+To allow your listener to distinguish between an event for its context and an event for
+a descendant context, it should request that its application context is injected and
+then compare the injected context with context of the event. The context can be injected
+by implementing `ApplicationContextAware` or, if the listener is a bean, using `@Autowired`.
+
 
 
 [[boot-features-web-environment]]
@@ -336,8 +347,18 @@ callbacks (such as the `DisposableBean` interface, or the `@PreDestroy` annotati
 be used.
 
 In addition, beans may implement the `org.springframework.boot.ExitCodeGenerator`
-interface if they wish to return a specific exit code when the application ends.
+interface if they wish to return a specific exit code when `SpringApplication.exit()`
+is called. This exit code can then be passed to `System.exit()` to return it as a status
+code.
 
+[source,java,indent=0]
+----
+include::{code-examples}/ExitCodeApplication.java[tag=example]
+----
+
+Also, the `ExitCodeGenerator` interface may be implemented by exceptions. When such an
+exception is encountered, Spring Boot will return the exit code provided by the
+implemented `getExitCode()` method.
 
 
 [[boot-features-application-admin]]
@@ -528,14 +549,32 @@ being loaded, including profile-specific file names). Files specified in
 `spring.config.location` are used as-is, with no support for profile-specific variants,
 and will be overridden by any profile-specific properties.
 
-The default search path `classpath:,classpath:/config,file:,file:config/`
-is always used, irrespective of the value of `spring.config.location`. This search path
-is ordered from lowest to highest precedence (`file:config/` wins). If you do specify
-your own locations, they take precedence over all of the default locations and use the
-same lowest to highest precedence ordering. In that way you can set up default values for
-your application in `application.properties` (or whatever other basename you choose with
-`spring.config.name`) and override it at runtime with a different file, keeping the
-defaults.
+Config locations are searched in reverse order. By default, the configured locations are
+`classpath:/,classpath:/config/,file:./,file:./config/`. The resulting search order is:
+
+1. `file:./config/`
+2. `file:./`
+3. `classpath:/config/`
+4. `classpath:/`
+
+When custom config locations are configured, they are used in addition to the default
+locations. Custom locations are searched before the default locations. For example,
+if custom locations `classpath:/custom-config/,file:./custom-config/` are configured,
+the search order becomes:
+
+1. `file:./custom-config/`
+2. `classpath:custom-config/`
+3. `file:./config/`
+4. `file:./`
+5. `classpath:/config/`
+6. `classpath:/`
+
+This search ordering allows you to specify default values in one configuration file
+and then selectively override those values in another. You can provide default values
+for you application in `application.properties` (or whatever other basename you choose
+with `spring.config.name`) in one of the default locations. These default values can
+then be overriden at runtime with a different file located in one of the custom
+locations.
 
 NOTE: If you use environment variables rather than system properties, most operating
 systems disallow period-separated key names, but you can use underscores instead (e.g.
@@ -952,7 +991,7 @@ does not inject other beans from the context. Having said that, The
 `@EnableConfigurationProperties` annotation is _also_ automatically applied to your project
 so that any _existing_ bean annotated with `@ConfigurationProperties` will be configured
 from the `Environment`. You could shortcut `MyConfiguration` above by making sure
-`FooProperties` is a already a bean:
+`FooProperties` is already a bean:
 
 [source,java,indent=0]
 ----
@@ -1848,7 +1887,7 @@ can be achieved as follows:
 You can also customize the static resource locations using
 `spring.resources.static-locations` (replacing the default values with a list of directory
 locations). If you do this the default welcome page detection will switch to your custom
-locations, so if there is an `index.html` in any of your locations on startup, it will be
+locations. So if there is an `index.html` in any of your locations on startup, it will be
 the home page of the application.
 
 In addition to the '`standard`' static resource locations above, a special case is made
@@ -2007,7 +2046,7 @@ particular controller and/or exception type.
 ----
 
 In the example above, if `YourException` is thrown by a controller defined in the same
-package as `FooController`, a json representation of the `CustomerErrorType` POJO will be
+package as `FooController`, a json representation of the `CustomErrorType` POJO will be
 used instead of the `ErrorAttributes` representation.
 
 
@@ -2473,9 +2512,15 @@ the classes imported from there (`SpringBootWebSecurityConfiguration` for web se
 and `AuthenticationManagerConfiguration` for authentication configuration which is also
 relevant in non-web applications). To switch off the default web application security
 configuration completely you can add a bean with `@EnableWebSecurity` (this does not
-disable the authentication manager configuration or Actuator's security). To customize
-it you normally use external properties and beans of type `WebSecurityConfigurerAdapter`
-(e.g. to add form-based login). To also switch off the authentication manager configuration
+disable the authentication manager configuration or Actuator's security).
+To customize it you normally use external properties and beans of type
+`WebSecurityConfigurerAdapter` (e.g. to add form-based login).
+
+NOTE: If you add `@EnableWebSecurity` and also disable Actuator security, you will get
+the default form-based login for the entire application unless you add a custom
+`WebSecurityConfigurerAdapter`.
+
+To also switch off the authentication manager configuration
 you can add a bean of type `AuthenticationManager`, or else configure the
 global `AuthenticationManager` by autowiring an `AuthenticationManagerBuilder` into
 a method in one of your `@Configuration` classes. There are several secure applications in
@@ -2491,8 +2536,9 @@ The basic features you get out of the box in a web application are:
 * HTTP Basic security for all other endpoints.
 * Security events published to Spring's `ApplicationEventPublisher` (successful and
   unsuccessful authentication and access denied).
-* Common low-level features (HSTS, XSS, CSRF, caching) provided by Spring Security are
+* Common low-level features (HSTS, XSS, caching) provided by Spring Security are
   on by default.
+* Cross Site Request Forgery (CSRF) checks are disabled by default.
 
 All of the above can be switched on and off or modified using external properties
 (`+security.*+`). To override the access rules without changing any other auto-configured
@@ -2548,7 +2594,7 @@ to decode tokens, so there is nothing else to do. If your app is a standalone se
 need to give it some more configuration, one of the following options:
 
 * `security.oauth2.resource.user-info-uri` to use the `/me` resource (e.g.
-`\https://uaa.run.pivotal.io/userinfo` on PWS)
+`\https://uaa.run.pivotal.io/userinfo` on Pivotal Web Services (PWS))
 
 * `security.oauth2.resource.token-info-uri` to use the token decoding endpoint (e.g.
 `\https://uaa.run.pivotal.io/check_token` on PWS).
@@ -2569,8 +2615,20 @@ URI where it can be downloaded (as a JSON object with a "`value`" field) with
 	{"alg":"SHA256withRSA","value":"-----BEGIN PUBLIC KEY-----\nMIIBI...\n-----END PUBLIC KEY-----\n"}
 ----
 
-WARNING: If you use the `security.oauth2.resource.jwt.key-uri` the authorization server
-needs to be running when your application starts up. It will log a warning if it can't
+Additionally, if your authorization server has an endpoint that returns a set of JSON Web Keys(JWKs),
+you can configure `security.oauth2.resource.jwk.key-set-uri`. E.g. on PWS:
+
+[indent=0]
+----
+	$ curl https://uaa.run.pivotal.io/token_keys
+	{"keys":[{"kid":"key-1","alg":"RS256","value":"-----BEGIN PUBLIC KEY-----\nMIIBI...\n-----END PUBLIC KEY-----\n"]}
+----
+
+NOTE: Configuring both JWT and JWK properties will cause an error. Only one of `security.oauth2.resource.jwt.key-uri`
+(or `security.oauth2.resource.jwt.key-value`) and `security.oauth2.resource.jwk.key-set-uri` should be configured.
+
+WARNING: If you use the `security.oauth2.resource.jwt.key-uri` or `security.oauth2.resource.jwk.key-set-uri,
+` the authorization server needs to be running when your application starts up. It will log a warning if it can't
 find the key, and tell you what to do to fix it.
 
 OAuth2 resources are protected by a filter chain with order
@@ -2733,6 +2791,7 @@ If the Actuator is also in use, you will find:
 * Security events are transformed into `AuditEvent` instances and published to the
 `AuditEventRepository`.
 * The default user will have the `ACTUATOR` role as well as the `USER` role.
+* Cross Site Request Forgery (CSRF) checks are disabled for actuator endpoints.
 
 The Actuator security features can be modified using external properties
 (`+management.security.*+`). To override the application access rules
@@ -3438,6 +3497,8 @@ is now a Mongo data class rather than a JPA `@Entity`, it will work in the same 
 
 	}
 ----
+
+TIP: You can customize document scanning locations using the `@EntityScan` annotation.
 
 TIP: For complete details of Spring Data MongoDB, including its rich object mapping
 technologies, refer to their http://projects.spring.io/spring-data-mongodb/[reference
@@ -4426,9 +4487,10 @@ accordingly:
 	spring.activemq.pool.max-connections=50
 ----
 
-See
+TIP: See
 {sc-spring-boot-autoconfigure}/jms/activemq/ActiveMQProperties.{sc-ext}[`ActiveMQProperties`]
-for more of the supported options.
+for more of the supported options. You can also register an arbitrary number of beans
+implementing `ActiveMQConnectionFactoryCustomizer` for more advanced customizations.
 
 By default, ActiveMQ creates a destination if it does not exist yet, so destinations are
 resolved against their provided names.
@@ -5322,9 +5384,10 @@ how your tests will run:
   _any_ servlet environment (mock or otherwise).
 
 NOTE: If your test is `@Transactional`, it will rollback the transaction at the end of
-each test method by default. If you're using this arrangement in combination with either
-`RANDOM_PORT` or `DEFINED_PORT`, any transaction initiated on the server won't rollback as
-the test is running in a different thread than the server processing.
+each test method by default. However, as using this arrangement with either `RANDOM_PORT`
+or `DEFINED_PORT` implicitly provides a real servlet environment, HTTP client and
+server will run in separate threads, thus separate transactions. Any transaction
+initiated on the server won't rollback in this case.
 
 NOTE: In addition to `@SpringBootTest` a number of other annotations are also
 provided for testing more specific slices of an application. See below for details.
@@ -5349,6 +5412,13 @@ The search algorithm works up from the package that contains the test until it f
 `@SpringBootApplication` or `@SpringBootConfiguration` annotated class. As long as you've
 <<using-boot-structuring-your-code, structured your code>> in a sensible way your main
 configuration is usually found.
+
+NOTE: If you use a
+<<boot-features-testing-spring-boot-applications-testing-autoconfigured-tests, test
+annotation to test a more specific slice of your application>> with such setup, you should
+avoid adding configuration that are specific to a particular area on the
+<<boot-features-testing-spring-boot-applications-testing-user-configuration, main's
+application class>>.
 
 If you want to customize the primary configuration, you can use a nested
 `@TestConfiguration` class. Unlike a nested `@Configuration` class which would be used
@@ -5426,6 +5496,19 @@ or replace a single existing bean definition. The annotation can be used directl
 classes, on fields within your test, or on `@Configuration` classes and fields. When used
 on a field, the instance of the created mock will also be injected. Mock beans are
 automatically reset after each test method.
+
+[NOTE]
+====
+This feature is automatically enabled as long as your test uses one of Spring Boot's
+test annotations (i.e. `@SpringBootTest`). To use this feature with a different
+arrangement, a listener will need to be added explicitly:
+
+[source,java,indent=0]
+----
+	@TestExecutionListeners(MockitoTestExecutionListener.class)
+----
+
+====
 
 Here's a typical example where we replace an existing `RemoteService` bean with a mock
 implementation:
@@ -5945,6 +6028,66 @@ automatically generate the default snippets:
 
 
 
+[[boot-features-testing-spring-boot-applications-testing-user-configuration]]
+==== User configuration and slicing
+If you've <<using-boot-structuring-your-code, structured your code>> in a sensible way,
+your `@SpringBootApplication` class is
+<<boot-features-testing-spring-boot-applications-detecting-config, used by default>> as
+the configuration of your tests.
+
+It then becomes important not to litter the application's main class with configuration
+that are are specific to a particular area of its functionality.
+
+Let's assume that you are using Spring Batch and you're relying on the auto-configuration
+for it. Your could define your `@SpringBootApplication` as follows:
+
+[source,java,indent=0]
+----
+	@SpringBootApplication
+	@EnableBatchProcessing
+	public class SampleApplication { ... }
+----
+
+Because this class is the source configuration for the test, any slice test will actually
+attempt to start Spring Batch, which is definitely not what you want to do. A recommended
+approach is to move that area-specific configuration to a separate `@Configuration`
+class at the same level as your application.
+
+[source,java,indent=0]
+----
+	@Configuration
+	@EnableBatchProcessing
+	public class BatchConfiguration { ... }
+----
+
+NOTE: Depending on the surface area of your application, you may either have a single
+`ApplicationConfiguration` class for your customizations or one class per domain area
+when it makes sense. The latter approach allows you to enable it in one of your test
+if necessary via `@Import`.
+
+Another source of confusion is classpath scanning. Let's assume that, while you've
+structured your code in a sensible way, you need to scan an additional package. Your
+application may look like this:
+
+[source,java,indent=0]
+----
+	@SpringBootApplication
+	@ComponentScan({ "com.example.app", "org.acme.another" })
+	public class SampleApplication { ... }
+----
+
+This effectively overrides the default component scan directive with the side effect of
+scanning those two packages regardless of the slice that you've chosen. For instance a
+`@DataJpaTest` will all of a sudden scan components and user configurations of your
+application. Again, moving the custom directive to a separate class is a good way to fix
+this issue.
+
+TIP: If this is not an option for you, you can create a `@SpringBootConfiguration`
+somewhere in the hierarchy of your test so that it is used instead. Or you can specify
+a source for your test which will disable the behaviour of finding a default one.
+
+
+
 [[boot-features-testing-spring-boot-applications-with-spock]]
 ==== Using Spock to test Spring Boot applications
 If you wish to use Spock to test a Spring Boot application you should add a dependency
@@ -6008,7 +6151,7 @@ where one will be auto-configured for you.
 
 [source,java,indent=0]
 ----
-EnvironmentTestUtils.addEnvironment(env, "org=Spring", "name=Boot");
+	EnvironmentTestUtils.addEnvironment(env, "org=Spring", "name=Boot");
 ----
 
 
@@ -6021,25 +6164,25 @@ for assertions:
 
 [source,java,indent=0]
 ----
-import org.junit.Rule;
-import org.junit.Test;
-import org.springframework.boot.test.rule.OutputCapture;
+	import org.junit.Rule;
+	import org.junit.Test;
+	import org.springframework.boot.test.rule.OutputCapture;
 
-import static org.hamcrest.Matchers.*;
-import static org.junit.Assert.*;
+	import static org.hamcrest.Matchers.*;
+	import static org.junit.Assert.*;
 
-public class MyTest {
+	public class MyTest {
 
-	@Rule
-	public OutputCapture capture = new OutputCapture();
+		@Rule
+		public OutputCapture capture = new OutputCapture();
 
-	@Test
-	public void testName() throws Exception {
-		System.out.println("Hello World!");
-		assertThat(capture.toString(), containsString("World"));
+		@Test
+		public void testName() throws Exception {
+			System.out.println("Hello World!");
+			assertThat(capture.toString(), containsString("World"));
+		}
+
 	}
-
-}
 ----
 
 [[boot-features-rest-templates-test-utility]]
@@ -6060,17 +6203,18 @@ features will be enabled:
 
 [source,java,indent=0]
 ----
-public class MyTest {
+	public class MyTest {
 
-	private TestRestTemplate template = new TestRestTemplate();
+		private TestRestTemplate template = new TestRestTemplate();
 
-	@Test
-	public void testRequest() throws Exception {
-		HttpHeaders headers = template.getForEntity("http://myhost.com/example", String.class).getHeaders();
-		assertThat(headers.getLocation().toString(), containsString("myotherhost"));
+		@Test
+		public void testRequest() throws Exception {
+			HttpHeaders headers = this.template.getForEntity(
+					"http://myhost.example.com/example", String.class).getHeaders();
+			assertThat(headers.getLocation()).hasHost("other.example.com");
+		}
+
 	}
-
-}
 ----
 
 Alternatively, if you are using the `@SpringBootTest` annotation with
@@ -6081,32 +6225,7 @@ specify a host and port will automatically connect to the embedded server:
 
 [source,java,indent=0]
 ----
-@RunWith(SpringRunner.class)
-@SpringBootTest
-public class MyTest {
-
-	@Autowired
-	private TestRestTemplate template;
-
-	@Test
-	public void testRequest() throws Exception {
-		HttpHeaders headers = template.getForEntity("/example", String.class).getHeaders();
-		assertThat(headers.getLocation().toString(), containsString("myotherhost"));
-	}
-
-	@TestConfiguration
-	static class Config {
-
-		@Bean
-		public RestTemplateBuilder restTemplateBuilder() {
-			return new RestTemplateBuilder()
-				.additionalMessageConverters(...)
-				.customizers(...);
-		}
-
-	}
-
-}
+include::{test-examples}/web/client/SampleWebClientTests.java[tag=test]
 ----
 
 
@@ -6186,7 +6305,7 @@ you provide web-specific configuration, your class may need to be applied after
 `WebMvcAutoConfiguration`.
 
 If you want to order certain auto-configurations that shouldn't have any direct
-knowledge of each other, you can also use `@AutoconfigureOrder`. That annotation has the
+knowledge of each other, you can also use `@AutoConfigureOrder`. That annotation has the
 same semantic as the regular `@Order` annotation but provides a dedicated order for
 auto-configuration classes.
 
@@ -6363,6 +6482,11 @@ you are auto-configuring typically requires other starters, mention them as well
 a proper set of _default_ dependencies may be hard if the number of optional dependencies
 is high as you should avoid bringing unnecessary dependencies for a typical usage of the
 library.
+
+NOTE: Either way, your starter must reference the core Spring Boot starter
+(`spring-boot-starter`) directly or indirectly (i.e. no need to add it if your starter
+relies on another starter). If a project is created with only your custom starter, Spring
+Boot's core features will be honoured by the presence of the core starter.
 
 
 

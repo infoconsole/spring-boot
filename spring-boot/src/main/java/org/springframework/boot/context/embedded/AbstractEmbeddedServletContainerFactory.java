@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2017 the original author or authors.
+ * Copyright 2012-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,14 +18,17 @@ package org.springframework.boot.context.embedded;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.net.JarURLConnection;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.net.URLConnection;
+import java.net.URLDecoder;
 import java.security.CodeSource;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Locale;
 import java.util.jar.JarFile;
 
 import org.apache.commons.logging.Log;
@@ -95,32 +98,44 @@ public abstract class AbstractEmbeddedServletContainerFactory
 		List<URL> staticResourceUrls = new ArrayList<URL>();
 		if (classLoader instanceof URLClassLoader) {
 			for (URL url : ((URLClassLoader) classLoader).getURLs()) {
-				try {
-					if ("file".equals(url.getProtocol())) {
-						File file = new File(url.getFile());
-						if (file.isDirectory()
-								&& new File(file, "META-INF/resources").isDirectory()) {
-							staticResourceUrls.add(url);
-						}
-						else if (isResourcesJar(file)) {
-							staticResourceUrls.add(url);
-						}
-					}
-					else {
-						URLConnection connection = url.openConnection();
-						if (connection instanceof JarURLConnection) {
-							if (isResourcesJar((JarURLConnection) connection)) {
-								staticResourceUrls.add(url);
-							}
-						}
-					}
-				}
-				catch (IOException ex) {
-					throw new IllegalStateException(ex);
+				if (isStaticResourceJar(url)) {
+					staticResourceUrls.add(url);
 				}
 			}
 		}
 		return staticResourceUrls;
+	}
+
+	private boolean isStaticResourceJar(URL url) {
+		try {
+			if ("file".equals(url.getProtocol())) {
+				File file = new File(getDecodedFile(url));
+				return (file.isDirectory()
+						&& new File(file, "META-INF/resources").isDirectory())
+						|| isResourcesJar(file);
+			}
+			else {
+				URLConnection connection = url.openConnection();
+				if (connection instanceof JarURLConnection
+						&& isResourcesJar((JarURLConnection) connection)) {
+					return true;
+				}
+			}
+		}
+		catch (IOException ex) {
+			throw new IllegalStateException(ex);
+		}
+		return false;
+	}
+
+	protected final String getDecodedFile(URL url) {
+		try {
+			return URLDecoder.decode(url.getFile(), "UTF-8");
+		}
+		catch (UnsupportedEncodingException ex) {
+			throw new IllegalStateException(
+					"Failed to decode '" + url.getFile() + "' using UTF-8");
+		}
 	}
 
 	private boolean isResourcesJar(JarURLConnection connection) {
@@ -128,23 +143,26 @@ public abstract class AbstractEmbeddedServletContainerFactory
 			return isResourcesJar(connection.getJarFile());
 		}
 		catch (IOException ex) {
+			this.logger.warn("Unable to open jar from connection '" + connection
+					+ "' to determine if it contains static resources", ex);
 			return false;
 		}
 	}
 
 	private boolean isResourcesJar(File file) {
 		try {
-			return isResourcesJar(new JarFile(file));
+			return file.getName().endsWith(".jar") && isResourcesJar(new JarFile(file));
 		}
 		catch (IOException ex) {
+			this.logger.warn("Unable to open jar '" + file
+					+ "' to determine if it contains static resources", ex);
 			return false;
 		}
 	}
 
 	private boolean isResourcesJar(JarFile jar) throws IOException {
 		try {
-			return jar.getName().endsWith(".jar")
-					&& (jar.getJarEntry("META-INF/resources") != null);
+			return jar.getJarEntry("META-INF/resources") != null;
 		}
 		finally {
 			jar.close();
@@ -177,7 +195,7 @@ public abstract class AbstractEmbeddedServletContainerFactory
 			this.logger.debug("Code archive: " + file);
 		}
 		if (file != null && file.exists() && !file.isDirectory()
-				&& file.getName().toLowerCase().endsWith(extension)) {
+				&& file.getName().toLowerCase(Locale.ENGLISH).endsWith(extension)) {
 			return file.getAbsoluteFile();
 		}
 		return null;
@@ -194,23 +212,29 @@ public abstract class AbstractEmbeddedServletContainerFactory
 	}
 
 	private File getCodeSourceArchive() {
+		return getCodeSourceArchive(getClass().getProtectionDomain().getCodeSource());
+	}
+
+	File getCodeSourceArchive(CodeSource codeSource) {
 		try {
-			CodeSource codeSource = getClass().getProtectionDomain().getCodeSource();
 			URL location = (codeSource == null ? null : codeSource.getLocation());
 			if (location == null) {
 				return null;
 			}
-			String path = location.getPath();
+			String path;
 			URLConnection connection = location.openConnection();
 			if (connection instanceof JarURLConnection) {
 				path = ((JarURLConnection) connection).getJarFile().getName();
 			}
-			if (path.indexOf("!/") != -1) {
+			else {
+				path = location.toURI().getPath();
+			}
+			if (path.contains("!/")) {
 				path = path.substring(0, path.indexOf("!/"));
 			}
 			return new File(path);
 		}
-		catch (IOException ex) {
+		catch (Exception ex) {
 			return null;
 		}
 	}

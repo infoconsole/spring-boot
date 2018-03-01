@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2016 the original author or authors.
+ * Copyright 2012-2017 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -46,11 +46,11 @@ class ServletComponentRegisteringPostProcessor
 	private static final List<ServletComponentHandler> HANDLERS;
 
 	static {
-		List<ServletComponentHandler> handlers = new ArrayList<ServletComponentHandler>();
-		handlers.add(new WebServletHandler());
-		handlers.add(new WebFilterHandler());
-		handlers.add(new WebListenerHandler());
-		HANDLERS = Collections.unmodifiableList(handlers);
+		List<ServletComponentHandler> servletComponentHandlers = new ArrayList<ServletComponentHandler>();
+		servletComponentHandlers.add(new WebServletHandler());
+		servletComponentHandlers.add(new WebFilterHandler());
+		servletComponentHandlers.add(new WebListenerHandler());
+		HANDLERS = Collections.unmodifiableList(servletComponentHandlers);
 	}
 
 	private final Set<String> packagesToScan;

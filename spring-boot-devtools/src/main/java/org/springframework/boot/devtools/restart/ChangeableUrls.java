@@ -104,7 +104,7 @@ final class ChangeableUrls implements Iterable<URL> {
 			return Collections.<URL>emptyList();
 		}
 		try {
-			return getUrlsFromManifestClassPathAttribute(jarFile);
+			return getUrlsFromManifestClassPathAttribute(url, jarFile);
 		}
 		catch (IOException ex) {
 			throw new IllegalStateException(
@@ -126,8 +126,8 @@ final class ChangeableUrls implements Iterable<URL> {
 		return null;
 	}
 
-	private static List<URL> getUrlsFromManifestClassPathAttribute(JarFile jarFile)
-			throws IOException {
+	private static List<URL> getUrlsFromManifestClassPathAttribute(URL jarUrl,
+			JarFile jarFile) throws IOException {
 		Manifest manifest = jarFile.getManifest();
 		if (manifest == null) {
 			return Collections.<URL>emptyList();
@@ -139,23 +139,26 @@ final class ChangeableUrls implements Iterable<URL> {
 		}
 		String[] entries = StringUtils.delimitedListToStringArray(classPath, " ");
 		List<URL> urls = new ArrayList<URL>(entries.length);
-		File parent = new File(jarFile.getName()).getParentFile();
+		List<URL> nonExistentEntries = new ArrayList<URL>();
 		for (String entry : entries) {
 			try {
-				File referenced = new File(parent, entry);
-				if (referenced.exists()) {
-					urls.add(referenced.toURI().toURL());
+				URL referenced = new URL(jarUrl, entry);
+				if (new File(referenced.getFile()).exists()) {
+					urls.add(referenced);
 				}
 				else {
-					System.err.println("Ignoring Class-Path entry " + entry + " found in "
-							+ jarFile.getName() + " as " + referenced
-							+ " does not exist");
+					nonExistentEntries.add(referenced);
 				}
 			}
 			catch (MalformedURLException ex) {
 				throw new IllegalStateException(
 						"Class-Path attribute contains malformed URL", ex);
 			}
+		}
+		if (!nonExistentEntries.isEmpty()) {
+			System.out.println("The Class-Path manifest attribute in " + jarFile.getName()
+					+ " referenced one or more files that do not exist: "
+					+ StringUtils.collectionToCommaDelimitedString(nonExistentEntries));
 		}
 		return urls;
 	}

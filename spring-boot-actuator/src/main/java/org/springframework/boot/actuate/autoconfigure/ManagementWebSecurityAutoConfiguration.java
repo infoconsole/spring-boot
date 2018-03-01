@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2017 the original author or authors.
+ * Copyright 2012-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -86,7 +86,7 @@ import org.springframework.util.StringUtils;
  */
 @Configuration
 @ConditionalOnWebApplication
-@ConditionalOnClass({ EnableWebSecurity.class })
+@ConditionalOnClass({ EnableWebSecurity.class, RequestMatcher.class })
 @AutoConfigureAfter(SecurityAutoConfiguration.class)
 @AutoConfigureBefore(FallbackWebSecurityAutoConfiguration.class)
 @EnableConfigurationProperties
@@ -222,7 +222,7 @@ public class ManagementWebSecurityAutoConfiguration {
 				http.requestMatcher(matcher);
 				// ... but permitAll() for the non-sensitive ones
 				configurePermittedRequests(http.authorizeRequests());
-				http.httpBasic().authenticationEntryPoint(entryPoint);
+				http.httpBasic().authenticationEntryPoint(entryPoint).and().cors();
 				// No cookies for management endpoints by default
 				http.csrf().disable();
 				http.sessionManagement()

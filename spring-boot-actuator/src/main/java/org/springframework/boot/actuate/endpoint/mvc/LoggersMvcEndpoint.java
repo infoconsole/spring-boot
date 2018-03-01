@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2017 the original author or authors.
+ * Copyright 2012-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,16 +16,19 @@
 
 package org.springframework.boot.actuate.endpoint.mvc;
 
+import java.util.Locale;
 import java.util.Map;
 
 import org.springframework.boot.actuate.endpoint.LoggersEndpoint;
 import org.springframework.boot.actuate.endpoint.LoggersEndpoint.LoggerLevels;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.logging.LogLevel;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.ResponseStatus;
 
 /**
  * Adapter to expose {@link LoggersEndpoint} as an {@link MvcEndpoint}.
@@ -68,19 +71,33 @@ public class LoggersMvcEndpoint extends EndpointMvcAdapter {
 			// disabled
 			return getDisabledResponse();
 		}
-		try {
-			LogLevel logLevel = getLogLevel(configuration);
-			this.delegate.setLogLevel(name, logLevel);
-			return ResponseEntity.ok().build();
-		}
-		catch (IllegalArgumentException ex) {
-			return ResponseEntity.badRequest().build();
-		}
+		LogLevel logLevel = getLogLevel(configuration);
+		this.delegate.setLogLevel(name, logLevel);
+		return ResponseEntity.ok().build();
 	}
 
 	private LogLevel getLogLevel(Map<String, String> configuration) {
 		String level = configuration.get("configuredLevel");
-		return (level == null ? null : LogLevel.valueOf(level.toUpperCase()));
+		try {
+			return (level == null ? null
+					: LogLevel.valueOf(level.toUpperCase(Locale.ENGLISH)));
+		}
+		catch (IllegalArgumentException ex) {
+			throw new InvalidLogLevelException(level);
+		}
+	}
+
+	/**
+	 * Exception thrown when the specified log level cannot be found.
+	 */
+	@SuppressWarnings("serial")
+	@ResponseStatus(value = HttpStatus.BAD_REQUEST, reason = "No such log level")
+	public static class InvalidLogLevelException extends RuntimeException {
+
+		public InvalidLogLevelException(String level) {
+			super("Log level '" + level + "' is invalid");
+		}
+
 	}
 
 }

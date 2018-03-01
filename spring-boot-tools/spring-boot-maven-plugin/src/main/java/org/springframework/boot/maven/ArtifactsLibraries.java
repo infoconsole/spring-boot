@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2016 the original author or authors.
+ * Copyright 2012-2017 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -45,12 +45,12 @@ public class ArtifactsLibraries implements Libraries {
 	private static final Map<String, LibraryScope> SCOPES;
 
 	static {
-		Map<String, LibraryScope> scopes = new HashMap<String, LibraryScope>();
-		scopes.put(Artifact.SCOPE_COMPILE, LibraryScope.COMPILE);
-		scopes.put(Artifact.SCOPE_RUNTIME, LibraryScope.RUNTIME);
-		scopes.put(Artifact.SCOPE_PROVIDED, LibraryScope.PROVIDED);
-		scopes.put(Artifact.SCOPE_SYSTEM, LibraryScope.PROVIDED);
-		SCOPES = Collections.unmodifiableMap(scopes);
+		Map<String, LibraryScope> libraryScopes = new HashMap<String, LibraryScope>();
+		libraryScopes.put(Artifact.SCOPE_COMPILE, LibraryScope.COMPILE);
+		libraryScopes.put(Artifact.SCOPE_RUNTIME, LibraryScope.RUNTIME);
+		libraryScopes.put(Artifact.SCOPE_PROVIDED, LibraryScope.PROVIDED);
+		libraryScopes.put(Artifact.SCOPE_SYSTEM, LibraryScope.PROVIDED);
+		SCOPES = Collections.unmodifiableMap(libraryScopes);
 	}
 
 	private final Set<Artifact> artifacts;

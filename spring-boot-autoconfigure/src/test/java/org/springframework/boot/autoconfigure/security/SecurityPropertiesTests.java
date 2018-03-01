@@ -122,4 +122,12 @@ public class SecurityPropertiesTests {
 		assertThat(this.security.getUser().getRole().toString()).isEqualTo("[ADMIN]");
 	}
 
+	@Test
+	public void testCsrf() {
+		assertThat(this.security.isEnableCsrf()).isEqualTo(false);
+		this.binder.bind(new MutablePropertyValues(
+				Collections.singletonMap("security.enable-csrf", true)));
+		assertThat(this.security.isEnableCsrf()).isEqualTo(true);
+	}
+
 }

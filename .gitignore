@@ -15,7 +15,6 @@ bin
 build
 lib/
 target
-.factorypath
 .springBeans
 interpolated*.xml
 dependency-reduced-pom.xml
@@ -33,6 +32,7 @@ overridedb.*
 .idea
 *.jar
 .DS_Store
-.factorypath
 dump.rdb
 transaction-logs
+.flattened-pom.xml
+spring-boot-tests/

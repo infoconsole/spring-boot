@@ -151,8 +151,7 @@ public class RepackageMojo extends AbstractDependencyFilterMojo {
 
 	/**
 	 * Make a fully executable jar for *nix machines by prepending a launch script to the
-	 * jar.
-	 * <br/>
+	 * jar. <br/>
 	 * Currently, some tools do not accept this format so you may not always be able to
 	 * use this technique. For example, <code>jar -xf</code> may silently fail to extract
 	 * a jar or war that has been made fully-executable. It is recommended that you only
@@ -356,7 +355,8 @@ public class RepackageMojo extends AbstractDependencyFilterMojo {
 		 * Module Layout.
 		 * @deprecated as of 1.5 in favor of a custom {@link LayoutFactory}
 		 */
-		@Deprecated MODULE(new Layouts.Module()),
+		@Deprecated
+		MODULE(new Layouts.Module()),
 
 		/**
 		 * No Layout.

@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2016 the original author or authors.
+ * Copyright 2012-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.regex.Matcher;
@@ -85,10 +86,13 @@ public class AnnotationsPropertySource extends EnumerablePropertySource<Class<?>
 
 	private List<Annotation> getMergedAnnotations(Class<?> root, Class<?> source) {
 		List<Annotation> mergedAnnotations = new ArrayList<Annotation>();
-		for (Annotation annotation : AnnotationUtils.getAnnotations(source)) {
-			if (!AnnotationUtils.isInJavaLangAnnotationPackage(annotation)) {
-				mergedAnnotations
-						.add(findMergedAnnotation(root, annotation.annotationType()));
+		Annotation[] annotations = AnnotationUtils.getAnnotations(source);
+		if (annotations != null) {
+			for (Annotation annotation : annotations) {
+				if (!AnnotationUtils.isInJavaLangAnnotationPackage(annotation)) {
+					mergedAnnotations
+							.add(findMergedAnnotation(root, annotation.annotationType()));
+				}
 			}
 		}
 		return mergedAnnotations;
@@ -155,7 +159,7 @@ public class AnnotationsPropertySource extends EnumerablePropertySource<Class<?>
 					matcher.group(1) + '-' + StringUtils.uncapitalize(matcher.group(2)));
 		}
 		matcher.appendTail(result);
-		return result.toString().toLowerCase();
+		return result.toString().toLowerCase(Locale.ENGLISH);
 	}
 
 	private String dotAppend(String prefix, String postfix) {

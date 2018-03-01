@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2016 the original author or authors.
+ * Copyright 2012-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,6 +29,7 @@ import java.util.Map;
 import java.util.Set;
 
 import org.springframework.beans.BeanUtils;
+import org.springframework.beans.factory.InitializingBean;
 import org.springframework.http.client.AbstractClientHttpRequestFactoryWrapper;
 import org.springframework.http.client.ClientHttpRequestFactory;
 import org.springframework.http.client.ClientHttpRequestInterceptor;
@@ -336,6 +337,9 @@ public class RestTemplateBuilder {
 	/**
 	 * Set the {@link ClientHttpRequestFactory} that should be used with the
 	 * {@link RestTemplate}.
+	 * <p>
+	 * Note that this request factory will be shared with all builder instances derived
+	 * from that point.
 	 * @param requestFactory the request factory to use
 	 * @return a new builder instance
 	 */
@@ -591,10 +595,25 @@ public class RestTemplateBuilder {
 			if (ClassUtils.isPresent(candidate.getKey(), classLoader)) {
 				Class<?> factoryClass = ClassUtils.resolveClassName(candidate.getValue(),
 						classLoader);
-				return (ClientHttpRequestFactory) BeanUtils.instantiate(factoryClass);
+				ClientHttpRequestFactory requestFactory = (ClientHttpRequestFactory) BeanUtils
+						.instantiate(factoryClass);
+				initializeIfNecessary(requestFactory);
+				return requestFactory;
 			}
 		}
 		return new SimpleClientHttpRequestFactory();
+	}
+
+	private void initializeIfNecessary(ClientHttpRequestFactory requestFactory) {
+		if (requestFactory instanceof InitializingBean) {
+			try {
+				((InitializingBean) requestFactory).afterPropertiesSet();
+			}
+			catch (Exception ex) {
+				throw new IllegalStateException(
+						"Failed to initialize request factory " + requestFactory, ex);
+			}
+		}
 	}
 
 	private <T> Set<T> append(Set<T> set, T addition) {

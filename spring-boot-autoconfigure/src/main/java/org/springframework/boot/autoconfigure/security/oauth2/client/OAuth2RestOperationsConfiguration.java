@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2017 the original author or authors.
+ * Copyright 2012-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,7 +29,6 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.autoconfigure.condition.NoneNestedConditions;
 import org.springframework.boot.autoconfigure.condition.SpringBootCondition;
 import org.springframework.boot.autoconfigure.security.SecurityProperties;
-import org.springframework.boot.autoconfigure.security.oauth2.client.OAuth2RestOperationsConfiguration.OAuth2ClientIdCondition;
 import org.springframework.boot.bind.RelaxedPropertyResolver;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
@@ -65,7 +64,6 @@ import org.springframework.util.StringUtils;
  */
 @Configuration
 @ConditionalOnClass(EnableOAuth2Client.class)
-@Conditional(OAuth2ClientIdCondition.class)
 public class OAuth2RestOperationsConfiguration {
 
 	@Configuration
@@ -89,7 +87,7 @@ public class OAuth2RestOperationsConfiguration {
 
 	@Configuration
 	@ConditionalOnBean(OAuth2ClientConfiguration.class)
-	@Conditional(NoClientCredentialsCondition.class)
+	@Conditional({ OAuth2ClientIdCondition.class, NoClientCredentialsCondition.class })
 	@Import(OAuth2ProtectedResourceDetailsConfiguration.class)
 	protected static class SessionScopedConfiguration {
 
@@ -107,8 +105,8 @@ public class OAuth2RestOperationsConfiguration {
 
 			private final AccessTokenRequest accessTokenRequest;
 
-			public ClientContextConfiguration(@Qualifier("accessTokenRequest")
-					ObjectProvider<AccessTokenRequest> accessTokenRequest) {
+			public ClientContextConfiguration(
+					@Qualifier("accessTokenRequest") ObjectProvider<AccessTokenRequest> accessTokenRequest) {
 				this.accessTokenRequest = accessTokenRequest.getIfAvailable();
 			}
 
@@ -128,7 +126,7 @@ public class OAuth2RestOperationsConfiguration {
 	// refresh tokens you need to @EnableOAuth2Client
 	@Configuration
 	@ConditionalOnMissingBean(OAuth2ClientConfiguration.class)
-	@Conditional(NoClientCredentialsCondition.class)
+	@Conditional({ OAuth2ClientIdCondition.class, NoClientCredentialsCondition.class })
 	@Import(OAuth2ProtectedResourceDetailsConfiguration.class)
 	protected static class RequestScopedConfiguration {
 

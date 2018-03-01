@@ -75,7 +75,6 @@ public class SecurityProperties implements SecurityPrerequisite {
 	/**
 	 * Enable Cross Site Request Forgery support.
 	 */
-	// Flip this when session creation is disabled by default
 	private boolean enableCsrf = false;
 
 	private Basic basic = new Basic();

@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2017 the original author or authors.
+ * Copyright 2012-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 package org.springframework.boot.logging;
 
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -341,17 +342,23 @@ public class LoggingApplicationListener implements GenericApplicationListener {
 	protected void setLogLevels(LoggingSystem system, Environment environment) {
 		Map<String, Object> levels = new RelaxedPropertyResolver(environment)
 				.getSubProperties("logging.level.");
+		boolean rootProcessed = false;
 		for (Entry<String, Object> entry : levels.entrySet()) {
-			setLogLevel(system, environment, entry.getKey(), entry.getValue().toString());
+			String name = entry.getKey();
+			if (name.equalsIgnoreCase(LoggingSystem.ROOT_LOGGER_NAME)) {
+				if (rootProcessed) {
+					continue;
+				}
+				name = null;
+				rootProcessed = true;
+			}
+			setLogLevel(system, environment, name, entry.getValue().toString());
 		}
 	}
 
 	private void setLogLevel(LoggingSystem system, Environment environment, String name,
 			String level) {
 		try {
-			if (name.equalsIgnoreCase(LoggingSystem.ROOT_LOGGER_NAME)) {
-				name = null;
-			}
 			level = environment.resolvePlaceholders(level);
 			system.setLogLevel(name, coerceLogLevel(level));
 		}
@@ -364,7 +371,7 @@ public class LoggingApplicationListener implements GenericApplicationListener {
 		if ("false".equalsIgnoreCase(level)) {
 			return LogLevel.OFF;
 		}
-		return LogLevel.valueOf(level.toUpperCase());
+		return LogLevel.valueOf(level.toUpperCase(Locale.ENGLISH));
 	}
 
 	private void registerShutdownHookIfNecessary(Environment environment,

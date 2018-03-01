@@ -66,6 +66,7 @@ import org.springframework.boot.autoconfigure.jdbc.metadata.DataSourcePoolMetada
 import org.springframework.boot.autoconfigure.jdbc.metadata.DataSourcePoolMetadataProvider;
 import org.springframework.boot.autoconfigure.jdbc.metadata.DataSourcePoolMetadataProviders;
 import org.springframework.boot.autoconfigure.jms.JmsAutoConfiguration;
+import org.springframework.boot.autoconfigure.jms.activemq.ActiveMQAutoConfiguration;
 import org.springframework.boot.autoconfigure.mail.MailSenderAutoConfiguration;
 import org.springframework.boot.autoconfigure.mongo.MongoAutoConfiguration;
 import org.springframework.boot.autoconfigure.solr.SolrAutoConfiguration;
@@ -95,7 +96,7 @@ import org.springframework.mail.javamail.JavaMailSenderImpl;
  */
 @Configuration
 @AutoConfigureBefore({ EndpointAutoConfiguration.class })
-@AutoConfigureAfter({ CassandraAutoConfiguration.class,
+@AutoConfigureAfter({ ActiveMQAutoConfiguration.class, CassandraAutoConfiguration.class,
 		CassandraDataAutoConfiguration.class, CouchbaseDataAutoConfiguration.class,
 		DataSourceAutoConfiguration.class, ElasticsearchAutoConfiguration.class,
 		JestAutoConfiguration.class, JmsAutoConfiguration.class,
@@ -280,6 +281,7 @@ public class HealthIndicatorAutoConfiguration {
 	}
 
 	@Configuration
+	@ConditionalOnClass(RedisConnectionFactory.class)
 	@ConditionalOnBean(RedisConnectionFactory.class)
 	@ConditionalOnEnabledHealthIndicator("redis")
 	public static class RedisHealthIndicatorConfiguration extends
@@ -301,6 +303,7 @@ public class HealthIndicatorAutoConfiguration {
 	}
 
 	@Configuration
+	@ConditionalOnClass(RabbitTemplate.class)
 	@ConditionalOnBean(RabbitTemplate.class)
 	@ConditionalOnEnabledHealthIndicator("rabbit")
 	public static class RabbitHealthIndicatorConfiguration extends
@@ -322,6 +325,7 @@ public class HealthIndicatorAutoConfiguration {
 	}
 
 	@Configuration
+	@ConditionalOnClass(SolrClient.class)
 	@ConditionalOnBean(SolrClient.class)
 	@ConditionalOnEnabledHealthIndicator("solr")
 	public static class SolrHealthIndicatorConfiguration extends
@@ -360,6 +364,7 @@ public class HealthIndicatorAutoConfiguration {
 	}
 
 	@Configuration
+	@ConditionalOnClass(JavaMailSenderImpl.class)
 	@ConditionalOnBean(JavaMailSenderImpl.class)
 	@ConditionalOnEnabledHealthIndicator("mail")
 	public static class MailHealthIndicatorConfiguration extends
@@ -381,6 +386,7 @@ public class HealthIndicatorAutoConfiguration {
 	}
 
 	@Configuration
+	@ConditionalOnClass(ConnectionFactory.class)
 	@ConditionalOnBean(ConnectionFactory.class)
 	@ConditionalOnEnabledHealthIndicator("jms")
 	public static class JmsHealthIndicatorConfiguration extends

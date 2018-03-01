@@ -34,6 +34,78 @@
     "defaultValue": true
   },
   {
+    "name": "spring.activemq.pool.configuration.block-if-session-pool-is-full",
+    "deprecation": {
+      "replacement": "spring.activemq.pool.block-if-full"
+    }
+  },
+  {
+    "name": "spring.activemq.pool.configuration.block-if-session-pool-is-full-timeout",
+    "deprecation": {
+      "replacement": "spring.activemq.pool.block-if-full-timeout"
+    }
+  },
+  {
+    "name": "spring.activemq.pool.configuration.connection-factory",
+    "deprecation": {
+      "reason": "This third party property cannot be set via the Environment."
+    }
+  },
+  {
+    "name": "spring.activemq.pool.configuration.create-connection-on-startup",
+    "deprecation": {
+      "replacement": "spring.activemq.pool.create-connection-on-startup"
+    }
+  },
+  {
+    "name": "spring.activemq.pool.configuration.expiry-timeout",
+    "deprecation": {
+      "replacement": "spring.activemq.pool.expiry-timeout"
+    }
+  },
+  {
+    "name": "spring.activemq.pool.configuration.idle-timeout",
+    "deprecation": {
+      "replacement": "spring.activemq.pool.idle-timeout"
+    }
+  },
+  {
+    "name": "spring.activemq.pool.configuration.max-connections",
+    "deprecation": {
+      "replacement": "spring.activemq.pool.max-connections"
+    }
+  },
+  {
+    "name": "spring.activemq.pool.configuration.maximum-active-session-per-connection",
+    "deprecation": {
+      "replacement": "spring.activemq.pool.maximum-active-session-per-connection"
+    }
+  },
+  {
+    "name": "spring.activemq.pool.configuration.properties",
+    "deprecation": {
+      "reason": "This third party property cannot be set via the Environment."
+    }
+  },
+  {
+    "name": "spring.activemq.pool.configuration.reconnect-on-exception",
+    "deprecation": {
+      "replacement": "spring.activemq.pool.reconnect-on-exception"
+    }
+  },
+  {
+    "name": "spring.activemq.pool.configuration.time-between-expiration-check-millis",
+    "deprecation": {
+      "replacement": "spring.activemq.pool.time-between-expiration-check"
+    }
+  },
+  {
+    "name": "spring.activemq.pool.configuration.use-anonymous-producers",
+    "deprecation": {
+      "replacement": "spring.activemq.pool.use-anonymous-producers"
+    }
+  },
+  {
     "name": "spring.aop.auto",
     "type": "java.lang.Boolean",
     "description": "Add @EnableAspectJAutoProxy.",
@@ -42,8 +114,7 @@
   {
     "name": "spring.aop.proxy-target-class",
     "type": "java.lang.Boolean",
-    "description": "Whether subclass-based (CGLIB) proxies are to be created (true) as opposed to standard Java interface-based proxies (false).",
-    "defaultValue": false
+    "description": "Whether subclass-based (CGLIB) proxies are to be created (true) as opposed to standard Java interface-based proxies (false). Defaults to \"true\" when using Spring Transaction Management, otherwise \"false\"."
   },
   {
     "name": "spring.application.admin.enabled",
@@ -128,7 +199,7 @@
     "name": "spring.data.neo4j.open-in-view",
     "type": "java.lang.Boolean",
     "description": "Register OpenSessionInViewInterceptor. Binds a Neo4j Session to the thread for the entire processing of the request.",
-    "defaultValue": false
+    "defaultValue": true
   },
   {
     "name": "spring.data.neo4j.repositories.enabled",
@@ -154,7 +225,25 @@
   },
   {
     "name": "spring.elasticsearch.jest.uris",
-    "defaultValue": ["http://localhost:9200"]
+    "defaultValue": [
+      "http://localhost:9200"
+    ]
+  },
+  {
+    "name": "spring.freemarker.prefix",
+    "defaultValue": ""
+  },
+  {
+    "name": "spring.freemarker.suffix",
+    "defaultValue": ".ftl"
+  },
+  {
+    "name": "spring.groovy.template.prefix",
+    "defaultValue": ""
+  },
+  {
+    "name": "spring.groovy.template.suffix",
+    "defaultValue": ".tpl"
   },
   {
     "name": "spring.http.encoding.enabled",
@@ -163,9 +252,9 @@
     "defaultValue": true
   },
   {
-  	"name": "spring.http.converters.preferred-json-mapper",
-  	"type": "java.lang.String",
-  	"description": "Preferred JSON mapper to use for HTTP message conversion. Set to \"gson\" to force the use of Gson when both it and Jackson are on the classpath."
+    "name": "spring.http.converters.preferred-json-mapper",
+    "type": "java.lang.String",
+    "description": "Preferred JSON mapper to use for HTTP message conversion. Set to \"gson\" to force the use of Gson when both it and Jackson are on the classpath."
   },
   {
     "name": "spring.jersey.type",
@@ -326,6 +415,14 @@
     "defaultValue": true
   },
   {
+    "name": "spring.mustache.prefix",
+    "defaultValue": "classpath:/templates/"
+  },
+  {
+    "name": "spring.mustache.suffix",
+    "defaultValue": ".html"
+  },
+  {
     "name": "spring.mvc.favicon.enabled",
     "type": "java.lang.Boolean",
     "description": "Enable resolution of favicon.ico.",
@@ -430,6 +527,14 @@
     "type": "java.lang.Boolean",
     "description": "Enable the connection status view for supported providers.",
     "defaultValue": false
+  },
+  {
+    "name": "spring.thymeleaf.prefix",
+    "defaultValue": "classpath:/templates/"
+  },
+  {
+    "name": "spring.thymeleaf.suffix",
+    "defaultValue": ".html"
   }
 ],"hints": [
   {

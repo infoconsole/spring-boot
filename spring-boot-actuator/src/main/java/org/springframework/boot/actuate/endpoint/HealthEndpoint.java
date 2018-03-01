@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2016 the original author or authors.
+ * Copyright 2012-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package org.springframework.boot.actuate.endpoint;
 
+import java.util.Locale;
 import java.util.Map;
 
 import org.springframework.boot.actuate.health.CompositeHealthIndicator;
@@ -69,8 +70,12 @@ public class HealthEndpoint extends AbstractEndpoint<Health> {
 		return this.timeToLive;
 	}
 
-	public void setTimeToLive(long ttl) {
-		this.timeToLive = ttl;
+	/**
+	 * Set the time to live for cached results.
+	 * @param timeToLive the time to live in milliseconds
+	 */
+	public void setTimeToLive(long timeToLive) {
+		this.timeToLive = timeToLive;
 	}
 
 	/**
@@ -87,7 +92,7 @@ public class HealthEndpoint extends AbstractEndpoint<Health> {
 	 * @return the key
 	 */
 	private String getKey(String name) {
-		int index = name.toLowerCase().indexOf("healthindicator");
+		int index = name.toLowerCase(Locale.ENGLISH).indexOf("healthindicator");
 		if (index > 0) {
 			return name.substring(0, index);
 		}

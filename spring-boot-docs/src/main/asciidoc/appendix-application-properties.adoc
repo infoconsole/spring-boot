@@ -50,7 +50,7 @@ content into your application; rather pick only the properties that you need.
 
 	# AOP
 	spring.aop.auto=true # Add @EnableAspectJAutoProxy.
-	spring.aop.proxy-target-class=false # Whether subclass-based (CGLIB) proxies are to be created (true) as opposed to standard Java interface-based proxies (false).
+	spring.aop.proxy-target-class= # Whether subclass-based (CGLIB) proxies are to be created (true) as opposed to standard Java interface-based proxies (false). Defaults to "true" when using Spring Transaction Management, otherwise "false".
 
 	# IDENTITY ({sc-spring-boot}/context/ContextIdApplicationContextInitializer.{sc-ext}[ContextIdApplicationContextInitializer])
 	spring.application.index= # Application index.
@@ -114,7 +114,7 @@ content into your application; rather pick only the properties that you need.
 
 	# INTERNATIONALIZATION ({sc-spring-boot-autoconfigure}/context/MessageSourceAutoConfiguration.{sc-ext}[MessageSourceAutoConfiguration])
 	spring.messages.always-use-message-format=false # Set whether to always apply the MessageFormat rules, parsing even messages without arguments.
-	spring.messages.basename=messages # Comma-separated list of basenames, each following the ResourceBundle convention.
+	spring.messages.basename=messages # Comma-separated list of basenames (essentially a fully-qualified classpath location), each following the ResourceBundle convention with relaxed support for slash based locations.
 	spring.messages.cache-seconds=-1 # Loaded resource bundle files cache expiration, in seconds. When set to -1, bundles are cached forever.
 	spring.messages.encoding=UTF-8 # Message bundles encoding.
 	spring.messages.fallback-to-system-locale=true # Set whether to fall back to the system Locale if no files for a specific Locale have been found.
@@ -146,8 +146,8 @@ content into your application; rather pick only the properties that you need.
 	server.address= # Network address to which the server should bind to.
 	server.compression.enabled=false # If response compression is enabled.
 	server.compression.excluded-user-agents= # List of user-agents to exclude from compression.
-	server.compression.mime-types= # Comma-separated list of MIME types that should be compressed. For instance `text/html,text/css,application/json`
-	server.compression.min-response-size= # Minimum response size that is required for compression to be performed. For instance 2048
+	server.compression.mime-types=text/html,text/xml,text/plain,text/css,text/javascript,application/javascript # Comma-separated list of MIME types that should be compressed.
+	server.compression.min-response-size=2048 # Minimum response size that is required for compression to be performed.
 	server.connection-timeout= # Time in milliseconds that connectors will wait for another HTTP request before closing the connection. When not set, the connector's container-specific default will be used. Use a value of -1 to indicate no (i.e. infinite) timeout.
 	server.context-parameters.*= # Servlet context init parameters. For instance `server.context-parameters.a=alpha`
 	server.context-path= # Context path of the application.
@@ -250,7 +250,7 @@ content into your application; rather pick only the properties that you need.
 	spring.freemarker.prefix= # Prefix that gets prepended to view names when building a URL.
 	spring.freemarker.request-context-attribute= # Name of the RequestContext attribute for all views.
 	spring.freemarker.settings.*= # Well-known FreeMarker keys which will be passed to FreeMarker's Configuration.
-	spring.freemarker.suffix= # Suffix that gets appended to view names when building a URL.
+	spring.freemarker.suffix=.ftl # Suffix that gets appended to view names when building a URL.
 	spring.freemarker.template-loader-path=classpath:/templates/ # Comma-separated list of template paths.
 	spring.freemarker.view-names= # White list of view names that can be resolved.
 
@@ -473,6 +473,7 @@ content into your application; rather pick only the properties that you need.
 	security.oauth2.resource.id= # Identifier of the resource.
 	security.oauth2.resource.jwt.key-uri= # The URI of the JWT token. Can be set if the value is not available and the key is public.
 	security.oauth2.resource.jwt.key-value= # The verification key of the JWT token. Can either be a symmetric secret or PEM-encoded RSA public key.
+	security.oauth2.resource.jwk.key-set-uri= # The URI for getting the set of keys that can be used to validate the token.
 	security.oauth2.resource.prefer-token-info=true # Use the token info, can be set to false to use the user info.
 	security.oauth2.resource.service-id=resource #
 	security.oauth2.resource.token-info-uri= # URI of the token decoding endpoint.
@@ -599,7 +600,7 @@ content into your application; rather pick only the properties that you need.
 	# NEO4J ({sc-spring-boot-autoconfigure}/data/neo4j/Neo4jProperties.{sc-ext}[Neo4jProperties])
 	spring.data.neo4j.compiler= # Compiler to use.
 	spring.data.neo4j.embedded.enabled=true # Enable embedded mode if the embedded driver is available.
-	spring.data.neo4j.open-in-view=false # Register OpenSessionInViewInterceptor. Binds a Neo4j Session to the thread for the entire processing of the request.
+	spring.data.neo4j.open-in-view=true # Register OpenSessionInViewInterceptor. Binds a Neo4j Session to the thread for the entire processing of the request.
 	spring.data.neo4j.password= # Login password of the server.
 	spring.data.neo4j.repositories.enabled=true # Enable Neo4j repositories.
 	spring.data.neo4j.uri= # URI used by the driver. Auto-detected by default.
@@ -607,6 +608,7 @@ content into your application; rather pick only the properties that you need.
 
 	# DATA REST ({sc-spring-boot-autoconfigure}/data/rest/RepositoryRestProperties.{sc-ext}[RepositoryRestProperties])
 	spring.data.rest.base-path= # Base path to be used by Spring Data REST to expose repository resources.
+	spring.data.rest.default-media-type= # Content type to use as a default when none is specified.
 	spring.data.rest.default-page-size= # Default size of pages.
 	spring.data.rest.detection-strategy=default # Strategy to use to determine which repositories get exposed.
 	spring.data.rest.enable-enum-translation= # Enable enum value translation via the Spring Data REST default resource bundle.
@@ -636,7 +638,7 @@ content into your application; rather pick only the properties that you need.
 	spring.datasource.jndi-name= # JNDI location of the datasource. Class, url, username & password are ignored when set.
 	spring.datasource.name=testdb # Name of the datasource.
 	spring.datasource.password= # Login password of the database.
-	spring.datasource.platform=all # Platform to use in the schema resource (schema-${platform}.sql).
+	spring.datasource.platform=all # Platform to use in the DDL or DML scripts (e.g. schema-${platform}.sql or data-${platform}.sql).
 	spring.datasource.schema= # Schema (DDL) script resource references.
 	spring.datasource.schema-username= # User of the database to execute DDL scripts (if different).
 	spring.datasource.schema-password= # Password of the database to execute DDL scripts (if different).
@@ -665,7 +667,7 @@ content into your application; rather pick only the properties that you need.
 	spring.h2.console.settings.trace=false # Enable trace output.
 	spring.h2.console.settings.web-allow-others=false # Enable remote access.
 
-	# JOOQ ({sc-spring-boot-autoconfigure}/jooq/JooqAutoConfiguration.{sc-ext}[JooqAutoConfiguration])
+	# JOOQ ({sc-spring-boot-autoconfigure}/jooq/JooqProperties.{sc-ext}[JooqProperties])
 	spring.jooq.sql-dialect= # SQLDialect JOOQ used when communicating with the configured datasource. For instance `POSTGRES`
 
 	# JPA ({sc-spring-boot-autoconfigure}/orm/jpa/JpaBaseConfiguration.{sc-ext}[JpaBaseConfiguration], {sc-spring-boot-autoconfigure}/orm/jpa/HibernateJpaAutoConfiguration.{sc-ext}[HibernateJpaAutoConfiguration])
@@ -837,17 +839,26 @@ content into your application; rather pick only the properties that you need.
 	# ----------------------------------------
 
 	# ACTIVEMQ ({sc-spring-boot-autoconfigure}/jms/activemq/ActiveMQProperties.{sc-ext}[ActiveMQProperties])
-	spring.activemq.broker-url= # URL of the ActiveMQ broker. Auto-generated by default. For instance `tcp://localhost:61616`
+	spring.activemq.broker-url= # URL of the ActiveMQ broker. Auto-generated by default.
+	spring.activemq.close-timeout=15000 # Time to wait, in milliseconds, before considering a close complete.
 	spring.activemq.in-memory=true # Specify if the default broker URL should be in memory. Ignored if an explicit broker has been specified.
+	spring.activemq.non-blocking-redelivery=false # Do not stop message delivery before re-delivering messages from a rolled back transaction. This implies that message order will not be preserved when this is enabled.
 	spring.activemq.password= # Login password of the broker.
+	spring.activemq.send-timeout=0 # Time to wait, in milliseconds, on Message sends for a response. Set it to 0 to indicate to wait forever.
 	spring.activemq.user= # Login user of the broker.
-	spring.activemq.packages.trust-all=false # Trust all packages.
+	spring.activemq.packages.trust-all= # Trust all packages.
 	spring.activemq.packages.trusted= # Comma-separated list of specific packages to trust (when not trusting all packages).
-	spring.activemq.pool.configuration.*= # See PooledConnectionFactory.
+	spring.activemq.pool.block-if-full=true # Block when a connection is requested and the pool is full. Set it to false to throw a "JMSException" instead.
+	spring.activemq.pool.block-if-full-timeout=-1 # Blocking period, in milliseconds, before throwing an exception if the pool is still full.
+	spring.activemq.pool.create-connection-on-startup=true # Create a connection on startup. Can be used to warm-up the pool on startup.
 	spring.activemq.pool.enabled=false # Whether a PooledConnectionFactory should be created instead of a regular ConnectionFactory.
 	spring.activemq.pool.expiry-timeout=0 # Connection expiration timeout in milliseconds.
 	spring.activemq.pool.idle-timeout=30000 # Connection idle timeout in milliseconds.
 	spring.activemq.pool.max-connections=1 # Maximum number of pooled connections.
+	spring.activemq.pool.maximum-active-session-per-connection=500 # Maximum number of active sessions per connection.
+	spring.activemq.pool.reconnect-on-exception=true # Reset the connection when a "JMXException" occurs.
+	spring.activemq.pool.time-between-expiration-check=-1 # Time to sleep, in milliseconds, between runs of the idle connection eviction thread. When negative, no idle connection eviction thread runs.
+	spring.activemq.pool.use-anonymous-producers=true # Use only one anonymous "MessageProducer" instance. Set it to false to create one "MessageProducer" every time one is required.
 
 	# ARTEMIS ({sc-spring-boot-autoconfigure}/jms/artemis/ArtemisProperties.{sc-ext}[ArtemisProperties])
 	spring.artemis.embedded.cluster-password= # Cluster password. Randomly generated on startup by default.
@@ -1012,7 +1023,7 @@ content into your application; rather pick only the properties that you need.
 	endpoints.flyway.sensitive= # Mark if the endpoint exposes sensitive information.
 	endpoints.health.enabled= # Enable the endpoint.
 	endpoints.health.id= # Endpoint identifier.
-	endpoints.health.mapping.*= # Mapping of health statuses to HttpStatus codes. By default, registered health statuses map to sensible defaults (i.e. UP maps to 200).
+	endpoints.health.mapping.*= # Mapping of health statuses to HTTP status codes. By default, registered health statuses map to sensible defaults (i.e. UP maps to 200).
 	endpoints.health.path= # Endpoint path.
 	endpoints.health.sensitive= # Mark if the endpoint exposes sensitive information.
 	endpoints.health.time-to-live=1000 # Time to live for cached result, in milliseconds.

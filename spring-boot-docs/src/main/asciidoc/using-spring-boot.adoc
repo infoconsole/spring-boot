@@ -301,14 +301,14 @@ To declare dependencies a typical `ivy.xml` file will look something like this:
 
 A typical `build.xml` will look like this:
 
-[source,xml,indent=0]
+[source,xml,indent=0,subs="verbatim,quotes,attributes"]
 ----
 	<project
 		xmlns:ivy="antlib:org.apache.ivy.ant"
 		xmlns:spring-boot="antlib:org.springframework.boot.ant"
 		name="myapp" default="build">
 
-		<property name="spring-boot.version" value="1.3.0.BUILD-SNAPSHOT" />
+		<property name="spring-boot.version" value="{spring-boot-version}" />
 
 		<target name="resolve" description="--> retrieve dependencies with ivy">
 			<ivy:retrieve pattern="lib/[conf]/[artifact]-[type]-[revision].[ext]" />
@@ -343,7 +343,6 @@ you don't want to use the `spring-boot-antlib` module.
 
 
 
-[[using-boot-starter-poms]]
 [[using-boot-starter]]
 === Starters
 Starters are a set of convenient dependency descriptors that you can include in your
@@ -882,7 +881,7 @@ however it doesn't support as many frameworks and it isn't commercially supporte
 ==== Excluding resources
 Certain resources don't necessarily need to trigger a restart when they are changed. For
 example, Thymeleaf templates can just be edited in-place. By default changing resources
-in `/META-INF/maven`, `/META-INF/resources` ,`/resources` ,`/static` ,`/public` or
+in `/META-INF/maven`, `/META-INF/resources`, `/resources`, `/static`, `/public` or
 `/templates` will not trigger a restart but will trigger a
 <<using-boot-devtools-livereload, live reload>>. If you want to customize these exclusions
 you can use the `spring.devtools.restart.exclude` property. For example, to exclude only
