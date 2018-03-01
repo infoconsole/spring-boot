@@ -336,9 +336,9 @@ public class SpringApplication {
 					printedBanner);
 			//调用context的refresh方法  初始化ApplicationContext容器
 			refreshContext(context);
-			//容器启动以后的回调方法
+			//容器启动以后的回调方法,可以实现接口
 			afterRefresh(context, applicationArguments);
-			//发出容器启动成功的事件
+			//发出容器启动成功的事件,发出启动成功或者失败的event
 			listeners.finished(context, null);
 			//停止启动监听器
 			stopWatch.stop();
@@ -374,8 +374,11 @@ public class SpringApplication {
 								ConfigurableEnvironment environment, SpringApplicationRunListeners listeners,
 								ApplicationArguments applicationArguments, Banner printedBanner) {
 		context.setEnvironment(environment);
+		//设置获取
 		postProcessApplicationContext(context);
+		//对context进行initializer操作
 		applyInitializers(context);
+		//在springboot初始化的时候   没有针对context的Prepared做任何的操作
 		listeners.contextPrepared(context);
 		if (this.logStartupInfo) {
 			logStartupInfo(context.getParent() == null);
@@ -383,6 +386,8 @@ public class SpringApplication {
 		}
 
 		// Add boot specific singleton beans
+		// DefaultListableBeanFactory
+		// 注册springApplicationArguments的bean  用来存放启动时候的Arguments
 		context.getBeanFactory().registerSingleton("springApplicationArguments",
 				applicationArguments);
 		if (printedBanner != null) {
@@ -390,9 +395,12 @@ public class SpringApplication {
 		}
 
 		// Load the sources
+		// 获取启动参数里面的sources  一般就是Configuration的配置类
 		Set<Object> sources = getSources();
 		Assert.notEmpty(sources, "Sources must not be empty");
+		//load就是加载配置的类
 		load(context, sources.toArray(new Object[sources.size()]));
+		//容器准备完成  还没有调reflash方法的时候，主要可以对容器设置context.addBeanFactoryPostProcessor()，用于对BeanFactory进行一些设置
 		listeners.contextLoaded(context);
 	}
 
@@ -819,6 +827,7 @@ public class SpringApplication {
 		List<Object> runners = new ArrayList<Object>();
 		runners.addAll(context.getBeansOfType(ApplicationRunner.class).values());
 		runners.addAll(context.getBeansOfType(CommandLineRunner.class).values());
+		//实现ApplicationRunner 或者CommandLineRunner 接口
 		AnnotationAwareOrderComparator.sort(runners);
 		for (Object runner : new LinkedHashSet<Object>(runners)) {
 			if (runner instanceof ApplicationRunner) {

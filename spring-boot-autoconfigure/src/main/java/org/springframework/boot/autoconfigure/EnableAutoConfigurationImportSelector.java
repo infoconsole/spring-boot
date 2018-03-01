@@ -81,6 +81,7 @@ public class EnableAutoConfigurationImportSelector
 		}
 		try {
 			AnnotationAttributes attributes = getAttributes(metadata);
+			//获取EnableAutoConfiguration的配置  在spring-boot-autoconfigure工程下面的spring.factories
 			List<String> configurations = getCandidateConfigurations(metadata,
 					attributes);
 			configurations = removeDuplicates(configurations);
