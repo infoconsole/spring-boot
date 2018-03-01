@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2016 the original author or authors.
+ * Copyright 2012-2017 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,6 @@ package sample.data.elasticsearch;
 
 import java.io.File;
 
-import org.assertj.core.api.Assertions;
 import org.elasticsearch.client.transport.NoNodeAvailableException;
 import org.junit.ClassRule;
 import org.junit.Rule;
@@ -29,6 +28,8 @@ import org.junit.runners.model.Statement;
 
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.boot.test.rule.OutputCapture;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * Tests for {@link SampleElasticsearchApplication}.
@@ -44,7 +45,7 @@ public class SampleElasticsearchApplicationTests {
 	public static SkipOnWindows skipOnWindows = new SkipOnWindows();
 
 	@Test
-	public void testDefaultSettings() throws Exception {
+	public void testDefaultSettings() {
 		try {
 			new SpringApplicationBuilder(SampleElasticsearchApplication.class).run();
 		}
@@ -55,7 +56,7 @@ public class SampleElasticsearchApplicationTests {
 			throw ex;
 		}
 		String output = this.outputCapture.toString();
-		Assertions.assertThat(output).contains("firstName='Alice', lastName='Smith'");
+		assertThat(output).contains("firstName='Alice', lastName='Smith'");
 	}
 
 	private boolean elasticsearchRunning(Exception ex) {
@@ -72,7 +73,7 @@ public class SampleElasticsearchApplicationTests {
 	static class SkipOnWindows implements TestRule {
 
 		@Override
-		public Statement apply(final Statement base, Description description) {
+		public Statement apply(Statement base, Description description) {
 			return new Statement() {
 
 				@Override
