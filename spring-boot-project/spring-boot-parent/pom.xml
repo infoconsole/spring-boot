@@ -738,6 +738,13 @@
 								<inherited>true</inherited>
 							</execution>
 						</executions>
+						<dependencies>
+							<dependency>
+								<groupId>org.apache.commons</groupId>
+								<artifactId>commons-lang3</artifactId>
+								<version>3.7</version>
+							</dependency>
+						</dependencies>
 					</plugin>
 				</plugins>
 			</build>
@@ -759,11 +766,8 @@
 		<profile>
 			<id>java9</id>
 			<activation>
-				<jdk>9</jdk>
+				<jdk>[9,)</jdk>
 			</activation>
-			<properties>
-				<aspectj.version>1.9.0.RC1</aspectj.version>
-			</properties>
 			<build>
 				<plugins>
 					<plugin>
@@ -775,6 +779,17 @@
 					</plugin>
 				</plugins>
 			</build>
+		</profile>
+		<profile>
+			<id>java10</id>
+			<activation>
+				<jdk>10</jdk>
+			</activation>
+			<properties>
+				<maven-failsafe-plugin.version>2.21.0</maven-failsafe-plugin.version>
+				<maven-site-plugin.version>3.7</maven-site-plugin.version>
+				<maven-surefire-plugin.version>2.21.0</maven-surefire-plugin.version>
+			</properties>
 		</profile>
 	</profiles>
 </project>

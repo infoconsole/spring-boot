@@ -341,6 +341,21 @@ except the `env` and `beans` endpoints, use the following properties:
 	management.endpoints.web.exposure.exclude=env,beans
 ----
 
+[NOTE]
+====
+`*` has a special meaning in YAML, so be sure to add quotes if you want to include (or
+exclude) all endpoints, as shown in the following example:
+
+[source,yaml,indent=0]
+----
+	management:
+		endpoints:
+			web:
+				exposure:
+					include: "*"
+----
+====
+
 NOTE: If your application is exposed publicly, we strongly recommend that you also
 <<production-ready-endpoints-security, secure your endpoints>>.
 
@@ -507,13 +522,6 @@ Finally, if you need access to web-framework-specific functionality, you can imp
 Servlet or Spring `@Controller` and `@RestController` endpoints at the cost of them not
 being available over JMX or when using a different web framework.
 
-TIP: If you add endpoints as a library feature, consider adding a configuration class
-annotated with `@ManagementContextConfiguration` to `/META-INF/spring.factories` under the
-following key:
-`org.springframework.boot.actuate.autoconfigure.web.ManagementContextConfiguration`. If
-you do so, and if your users ask for a separate management port or address, the endpoint
-moves to a child context with all the other web endpoints.
-
 
 
 [[production-ready-endpoints-custom-input]]
@@ -643,8 +651,8 @@ NOTE: Range requests are not supported when using Jersey.
 An operation on a web endpoint or a web-specific endpoint extension can receive the
 current `java.security.Principal` or
 `org.springframework.boot.actuate.endpoint.SecurityContext` as a method parameter. The
-former is typically used in conjuction with `@Nullable` to provide different behaviour for
-authenticated and unauthenticated users. The latter is typically used to perform
+former is typically used in conjunction with `@Nullable` to provide different behaviour
+for authenticated and unauthenticated users. The latter is typically used to perform
 authorization checks using its `isUserInRole(String)` method.
 
 
@@ -664,7 +672,7 @@ possible.
 ==== Controller endpoints
 `@ControllerEndpoint` and `@RestControllerEndpoint` can be used to implement an endpoint
 that is only exposed by Spring MVC or Spring WebFlux. Methods are mapped using the
-standard annotations Spring MVC and Spring WevFlux annotations such as `@RequestMapping`
+standard annotations Spring MVC and Spring WebFlux annotations such as `@RequestMapping`
 and `@GetMapping`, with the endpoint's ID being used as a prefix for the path. Controller
 endpoints provide deeper integration with Spring's web frameworks but at the expense of
 portability. The `@Endpoint` and `@WebEndpoint` annotations should be preferred whenever
@@ -1395,7 +1403,7 @@ You can also change the interval at which metrics are sent to Datadog:
 
 [source,properties,indent=0]
 ----
-	management.metrics.export.datadog.steps=30s
+	management.metrics.export.datadog.step=30s
 ----
 
 
@@ -1468,7 +1476,7 @@ You can also change the interval at which metrics are sent to New Relic:
 
 [source,properties,indent=0]
 ----
-	management.metrics.export.newrelic.steps=30s
+	management.metrics.export.newrelic.step=30s
 ----
 
 
@@ -1511,7 +1519,7 @@ You can also change the interval at which metrics are sent to SignalFx:
 
 [source,properties,indent=0]
 ----
-	management.metrics.export.signalfx.steps=30s
+	management.metrics.export.signalfx.step=30s
 ----
 
 
@@ -1581,7 +1589,7 @@ You can also change the interval at which metrics are sent to Wavefront:
 
 [source,properties,indent=0]
 ----
-	management.metrics.export.wavefront.steps=30s
+	management.metrics.export.wavefront.step=30s
 ----
 
 
@@ -1601,6 +1609,7 @@ Spring Boot registers the following core metrics when applicable:
 * Uptime metrics: report a gauge for uptime and a fixed gauge representing the
 application's absolute start time
 * Tomcat metrics
+* https://docs.spring.io/spring-integration/docs/current/reference/html/system-management-chapter.html#micrometer-integration[Spring Integration] metrics
 
 
 
@@ -1704,14 +1713,6 @@ To customize the tags, provide a `@Bean` that implements
 
 
 
-[[production-ready-metrics-integration]]
-==== Spring Integration metrics
-When Spring Integration is available, a `timer` and `errorCounter` are registered for each
-`MessageHandler` and `MessageChannel`. For each `MessageSource`, a `counter` is
-registered.
-
-
-
 [[production-ready-metrics-cache]]
 ==== Cache Metrics
 Auto-configuration enables the instrumentation of all available ``Cache``s on startup
@@ -1756,9 +1757,18 @@ factories with a metric named `rabbitmq`.
 
 [[production-ready-metrics-custom]]
 === Registering custom metrics
-To register custom metrics, create a `MeterBinder` bean. By default, all `MeterBinder`
-beans will be automatically applied to the micrometer `MeterRegistry.Config`.
+To register custom metrics, inject `MeterRegistry` into your component, as shown in the
+following example:
 
+[source,java,indent=0]
+----
+include::{code-examples}/actuate/metrics/MetricsMeterRegistryInjectionExample.java[tag=component]
+----
+
+If you find that you repeatedly instrument a suite of metrics across components or
+applications, you may encapsulate this suite in a `MeterBinder` implementation. By
+default, metrics from all `MeterBinder` beans will be automatically bound to
+the Spring-managed `MeterRegistry`.
 
 
 [[production-ready-metrics-per-meter-properties]]
