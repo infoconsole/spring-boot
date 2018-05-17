@@ -31,9 +31,22 @@ import org.springframework.web.servlet.HandlerMapping;
  *
  * @author Jon Schneider
  * @author Andy Wilkinson
+ * @author Brian Clozel
  * @since 2.0.0
  */
 public final class WebMvcTags {
+
+	private static final Tag URI_NOT_FOUND = Tag.of("uri", "NOT_FOUND");
+
+	private static final Tag URI_REDIRECTION = Tag.of("uri", "REDIRECTION");
+
+	private static final Tag URI_UNKNOWN = Tag.of("uri", "UNKNOWN");
+
+	private static final Tag EXCEPTION_NONE = Tag.of("exception", "None");
+
+	private static final Tag STATUS_UNKNOWN = Tag.of("status", "UNKNOWN");
+
+	private static final Tag METHOD_UNKNOWN = Tag.of("method", "UNKNOWN");
 
 	private WebMvcTags() {
 	}
@@ -45,8 +58,7 @@ public final class WebMvcTags {
 	 * @return the method tag whose value is a capitalized method (e.g. GET).
 	 */
 	public static Tag method(HttpServletRequest request) {
-		return (request == null ? Tag.of("method", "UNKNOWN")
-				: Tag.of("method", request.getMethod()));
+		return (request != null ? Tag.of("method", request.getMethod()) : METHOD_UNKNOWN);
 	}
 
 	/**
@@ -55,8 +67,9 @@ public final class WebMvcTags {
 	 * @return the status tag derived from the status of the response
 	 */
 	public static Tag status(HttpServletResponse response) {
-		return (response == null ? Tag.of("status", "UNKNOWN")
-				: Tag.of("status", ((Integer) response.getStatus()).toString()));
+		return (response != null
+				? Tag.of("status", Integer.toString(response.getStatus()))
+				: STATUS_UNKNOWN);
 	}
 
 	/**
@@ -69,21 +82,24 @@ public final class WebMvcTags {
 	 * @return the uri tag derived from the request
 	 */
 	public static Tag uri(HttpServletRequest request, HttpServletResponse response) {
-		if (response != null) {
-			HttpStatus status = extractStatus(response);
-			if (status != null && status.is3xxRedirection()) {
-				return Tag.of("uri", "REDIRECTION");
+		if (request != null) {
+			String pattern = getMatchingPattern(request);
+			if (pattern != null) {
+				return Tag.of("uri", pattern);
 			}
-			if (status != null && status.equals(HttpStatus.NOT_FOUND)) {
-				return Tag.of("uri", "NOT_FOUND");
+			else if (response != null) {
+				HttpStatus status = extractStatus(response);
+				if (status != null && status.is3xxRedirection()) {
+					return URI_REDIRECTION;
+				}
+				if (status != null && status.equals(HttpStatus.NOT_FOUND)) {
+					return URI_NOT_FOUND;
+				}
 			}
+			String pathInfo = getPathInfo(request);
+			return Tag.of("uri", pathInfo.isEmpty() ? "root" : pathInfo);
 		}
-		if (request == null) {
-			return Tag.of("uri", "UNKNOWN");
-		}
-		String uri = getUri(request);
-		uri = uri.replaceAll("//+", "/").replaceAll("/$", "");
-		return Tag.of("uri", uri.isEmpty() ? "root" : uri);
+		return URI_UNKNOWN;
 	}
 
 	private static HttpStatus extractStatus(HttpServletResponse response) {
@@ -95,11 +111,15 @@ public final class WebMvcTags {
 		}
 	}
 
-	private static String getUri(HttpServletRequest request) {
-		String uri = (String) request
+	private static String getMatchingPattern(HttpServletRequest request) {
+		return (String) request
 				.getAttribute(HandlerMapping.BEST_MATCHING_PATTERN_ATTRIBUTE);
-		uri = (uri != null ? uri : request.getPathInfo());
-		return (StringUtils.hasText(uri) ? uri : "/");
+	}
+
+	private static String getPathInfo(HttpServletRequest request) {
+		String pathInfo = request.getPathInfo();
+		String uri = (StringUtils.hasText(pathInfo) ? pathInfo : "/");
+		return uri.replaceAll("//+", "/").replaceAll("/$", "");
 	}
 
 	/**
@@ -109,8 +129,9 @@ public final class WebMvcTags {
 	 * @return the exception tag derived from the exception
 	 */
 	public static Tag exception(Throwable exception) {
-		return Tag.of("exception",
-				(exception == null ? "None" : exception.getClass().getSimpleName()));
+		return (exception != null
+				? Tag.of("exception", exception.getClass().getSimpleName())
+				: EXCEPTION_NONE);
 	}
 
 }

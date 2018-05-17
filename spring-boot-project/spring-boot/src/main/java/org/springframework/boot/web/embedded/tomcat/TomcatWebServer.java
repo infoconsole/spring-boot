@@ -122,6 +122,7 @@ public class TomcatWebServer implements WebServer {
 				startDaemonAwaitThread();
 			}
 			catch (Exception ex) {
+				stopSilently();
 				throw new WebServerException("Unable to start embedded Tomcat", ex);
 			}
 		}
@@ -197,7 +198,7 @@ public class TomcatWebServer implements WebServer {
 				addPreviouslyRemovedConnectors();
 				Connector connector = this.tomcat.getConnector();
 				if (connector != null && this.autoStart) {
-					startConnector();
+					performDeferredLoadOnStartup();
 				}
 				checkThatConnectorsHaveStarted();
 				this.started = true;
@@ -271,7 +272,7 @@ public class TomcatWebServer implements WebServer {
 		}
 	}
 
-	private void startConnector() {
+	private void performDeferredLoadOnStartup() {
 		try {
 			for (Container child : this.tomcat.getHost().findChildren()) {
 				if (child instanceof TomcatEmbeddedContext) {
@@ -318,7 +319,7 @@ public class TomcatWebServer implements WebServer {
 	private String getPortsDescription(boolean localPort) {
 		StringBuilder ports = new StringBuilder();
 		for (Connector connector : this.tomcat.getService().findConnectors()) {
-			ports.append(ports.length() == 0 ? "" : " ");
+			ports.append(ports.length() != 0 ? " " : "");
 			int port = (localPort ? connector.getLocalPort() : connector.getPort());
 			ports.append(port + " (" + connector.getScheme() + ")");
 		}
@@ -348,4 +349,5 @@ public class TomcatWebServer implements WebServer {
 	public Tomcat getTomcat() {
 		return this.tomcat;
 	}
+
 }

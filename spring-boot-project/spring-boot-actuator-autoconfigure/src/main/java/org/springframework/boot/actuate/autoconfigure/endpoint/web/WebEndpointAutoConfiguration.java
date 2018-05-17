@@ -57,7 +57,6 @@ import org.springframework.context.annotation.Configuration;
  *
  * @author Phillip Webb
  * @author Stephane Nicoll
- * @author Phillip Webb
  * @since 2.0.0
  */
 @Configuration
@@ -139,7 +138,7 @@ public class WebEndpointAutoConfiguration {
 
 	@Configuration
 	@ConditionalOnWebApplication(type = Type.SERVLET)
-	static class WebEndpointServletAutoConfiguration {
+	static class WebEndpointServletConfiguration {
 
 		@Bean
 		@ConditionalOnMissingBean(ServletEndpointsSupplier.class)

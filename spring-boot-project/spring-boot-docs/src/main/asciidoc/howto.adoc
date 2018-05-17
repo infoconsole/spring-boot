@@ -276,15 +276,12 @@ configuration by setting properties in `+spring.main.*+`. For example, in
 
 [source,properties,indent=0,subs="verbatim,quotes,attributes"]
 ----
-	spring.main.web-environment=false
+	spring.main.web-application-type=none
 	spring.main.banner-mode=off
 ----
 
-Then the Spring Boot banner is not printed on startup, and the application is
-not a web application.
-
-NOTE: The preceding example also demonstrates how flexible binding allows the use of
-underscores (`_`) as well as dashes (`-`) in property names.
+Then the Spring Boot banner is not printed on startup, and the application is not starting
+an embedded web server.
 
 Properties defined in external configuration override the values specified with the Java
 API, with the notable exception of the sources used to create the `ApplicationContext`.
@@ -516,9 +513,6 @@ includes Tomcat by including `spring-boot-starter-tomcat`, but you can use
 `spring-boot-starter-reactor-netty`, but you can use `spring-boot-starter-tomcat`,
 `spring-boot-starter-jetty`, or `spring-boot-starter-undertow` instead.
 
-NOTE: Many starters support only Spring MVC, so they transitively bring
-`spring-boot-starter-web` into your application classpath.
-
 If you need to use a different HTTP server, you need to exclude the default dependencies
 and include the one you need. Spring Boot provides separate starters for
 HTTP servers to help make this process as easy as possible.
@@ -566,6 +560,19 @@ WebFlux:
 NOTE: `spring-boot-starter-reactor-netty` is required to use the `WebClient` class, so
 you may need to keep a dependency on Netty even when you need to include a different HTTP
 server.
+
+
+
+[[howto-disable-web-server]]
+=== Disabling the Web Server
+If your classpath contains the necessary bits to start a web server, Spring Boot will
+automatically start it. To disable this behaviour configure the `WebApplicationType` in
+your `application.properties`, as shown in the following example:
+
+[source,properties,indent=0]
+----
+	spring.main.web-application-type=none
+----
 
 
 
@@ -1344,6 +1351,30 @@ For more detail, see the following sections:
 
 
 
+[[howto-jersey]]
+== Jersey
+
+
+
+[[howto-jersey-spring-security]]
+=== Secure Jersey endpoints with Spring Security
+Spring Security can be used to secure a Jersey-based web application in much the same
+way as it can be used to secure a Spring MVC-based web application. However, if you want
+to use Spring Security's method-level security with Jersey, you must configure Jersey to
+use `setStatus(int)` rather `sendError(int)`. This prevents Jersey from committing the
+response before Spring Security has had an opportunity to report an authentication or
+authorization failure to the client.
+
+The `jersey.config.server.response.setStatusOverSendError` proeprty must be set to `true`
+on the application's `ResourceConfig` bean, as shown in the following example:
+
+[source,java,indent=0]
+----
+include::{code-examples}/jersey/JerseySetStatusOverSendErrorExample.java[tag=resource-config]
+----
+
+
+
 [[howto-http-clients]]
 == HTTP Clients
 
@@ -1930,10 +1961,9 @@ as shown in the following example:
 
 [[howto-use-traditional-persistence-xml]]
 === Use a Traditional `persistence.xml` File
-Spring does not require the use of XML to configure the JPA provider, and Spring Boot
-assumes you want to take advantage of that feature. If you prefer to use
-`persistence.xml`, you need to define your own `@Bean` of type
-`LocalEntityManagerFactoryBean` (with an ID of '`entityManagerFactory`') and set the
+Spring Boot will not search for or use a `META-INF/persistence.xml` by default. If you
+prefer to use a traditional `persistence.xml`, you need to define your own `@Bean` of
+type `LocalEntityManagerFactoryBean` (with an ID of '`entityManagerFactory`') and set the
 persistence unit name there.
 
 See
@@ -2069,9 +2099,17 @@ is the value of `spring.datasource.platform`. This allows you to switch to
 database-specific scripts if necessary. For example, you might choose to set it to the
 vendor name of the database (`hsqldb`, `h2`, `oracle`, `mysql`, `postgresql`, and so on).
 
-Spring Boot automatically creates the schema of an embedded `DataSource`. This behavior
-can be customized by using the `spring.datasource.initialization-mode` property (and it
-can also be `always` or `never`).
+[NOTE]
+====
+Spring Boot automatically creates the schema of an embedded `DataSource`. This behaviour
+can be customized by using the `spring.datasource.initialization-mode` property. For
+instance, if you want to always initialize the `DataSource` regardless of its type:
+
+[indent=0,subs="verbatim,quotes,attributes"]
+----
+	spring.datasource.initialization-mode=always
+----
+====
 
 By default, Spring Boot enables the fail-fast feature of the Spring JDBC initializer. This
 means that, if the scripts cause exceptions, the application fails to start. You can tune
@@ -2558,7 +2596,7 @@ plugin, as shown in the following example:
 [source,groovy,indent=0]
 ----
 	plugins {
-		id "com.gorylenko.gradle-git-properties" version "1.4.17"
+		id "com.gorylenko.gradle-git-properties" version "1.4.21"
 	}
 ----
 
@@ -2569,7 +2607,6 @@ to be controlled by Jackson's date serialization configuration settings.
 
 
 
-[[howto-customize-dependency-versions-with-maven]]
 [[howto-customize-dependency-versions]]
 === Customize Dependency Versions
 If you use a Maven build that inherits directly or indirectly from
@@ -2595,7 +2632,8 @@ the artifact yourself instead of overriding the property.
 WARNING: Each Spring Boot release is designed and tested against this specific set of
 third-party dependencies. Overriding versions may cause compatibility issues.
 
-
+To override dependency versions in Gradle, see {spring-boot-gradle-plugin-reference}/#managing-dependencies-customizing[this section]
+of the Gradle plugin's documentation.
 
 [[howto-create-an-executable-jar-with-maven]]
 === Create an Executable JAR with Maven
@@ -2842,6 +2880,10 @@ This section answers common questions about traditional deployment.
 [[howto-create-a-deployable-war-file]]
 === Create a Deployable War File
 
+WARNING: Because Spring WebFlux does not strictly depend on the Servlet API and
+applications are deployed by default on an embedded Reactor Netty server,
+War deployment is not supported for WebFlux applications.
+
 The first step in producing a deployable war file is to provide a
 `SpringBootServletInitializer` subclass and override its `configure` method. Doing so
 makes use of Spring Framework's Servlet 3.0 support and lets you configure your
@@ -2930,14 +2972,6 @@ TIP: Take a look at Spring Boot's sample applications for a
 {github-code}/spring-boot-samples/spring-boot-sample-traditional/pom.xml[Maven-based
 example] of the previously described configuration.
 
-
-
-[[howto-create-a-deployable-war-file-for-older-containers]]
-=== Create a Deployable War File for Older Servlet Containers
-Older Servlet containers do not have support for the `ServletContextInitializer` bootstrap
-process used in Servlet 3.0. You can still use Spring and Spring Boot in these containers,
-but you are going to need to add a `web.xml` to your application and configure it to load
-an `ApplicationContext` via a `DispatcherServlet`.
 
 
 
@@ -3103,70 +3137,6 @@ rather than the version that was pre-installed with the server. You can do so by
 		</wls:container-descriptor>
 	</wls:weblogic-web-app>
 ----
-
-
-
-[[howto-servlet-2-5]]
-===  Deploying a WAR in an Old (Servlet 2.5) Container
-Spring Boot uses Servlet 3.0 APIs to initialize the `ServletContext` (register `Servlets`
-and so on), so you cannot use the same application in a Servlet 2.5 container.
-It *is*, however, possible to run a Spring Boot application on an older container with some
-special tools. If you include `org.springframework.boot:spring-boot-legacy` as a
-dependency (https://github.com/scratches/spring-boot-legacy[maintained separately] to the
-core of Spring Boot and currently available at 1.1.0.RELEASE), all you need to do
-is create a `web.xml` and declare a context listener to create the application context and
-your filters and servlets. The context listener is a special purpose one for Spring Boot,
-but the rest of it is normal for a Spring application in Servlet 2.5. The following Maven
-example shows how to set up a Spring Boot project to run in a Servlet 2.5 container:
-
-[source,xml,indent=0]
-----
-	<?xml version="1.0" encoding="UTF-8"?>
-	<web-app version="2.5" xmlns="http://java.sun.com/xml/ns/javaee"
-		xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-		xsi:schemaLocation="http://java.sun.com/xml/ns/javaee http://java.sun.com/xml/ns/javaee/web-app_2_5.xsd">
-
-		<context-param>
-			<param-name>contextConfigLocation</param-name>
-			<param-value>demo.Application</param-value>
-		</context-param>
-
-		<listener>
-			<listener-class>org.springframework.boot.legacy.context.web.SpringBootContextLoaderListener</listener-class>
-		</listener>
-
-		<filter>
-			<filter-name>metricsFilter</filter-name>
-			<filter-class>org.springframework.web.filter.DelegatingFilterProxy</filter-class>
-		</filter>
-
-		<filter-mapping>
-			<filter-name>metricsFilter</filter-name>
-			<url-pattern>/*</url-pattern>
-		</filter-mapping>
-
-		<servlet>
-			<servlet-name>appServlet</servlet-name>
-			<servlet-class>org.springframework.web.servlet.DispatcherServlet</servlet-class>
-			<init-param>
-				<param-name>contextAttribute</param-name>
-				<param-value>org.springframework.web.context.WebApplicationContext.ROOT</param-value>
-			</init-param>
-			<load-on-startup>1</load-on-startup>
-		</servlet>
-
-		<servlet-mapping>
-			<servlet-name>appServlet</servlet-name>
-			<url-pattern>/</url-pattern>
-		</servlet-mapping>
-
-	</web-app>
-----
-
-In the preceding example, we use a single application context (the one created by the
-context listener) and attach it to the `DispatcherServlet` by using an `init` parameter.
-This is normal in a Spring Boot application (you normally only have one application
-context).
 
 
 

@@ -34,12 +34,6 @@
       "defaultValue": "never"
     },
     {
-      "name": "server.error.whitelabel.enabled",
-      "type": "java.lang.Boolean",
-      "description": "Whether to enable the default error page displayed in browsers in case of a server error.",
-      "defaultValue": true
-    },
-    {
       "name": "server.port",
       "defaultValue": 8080
     },
@@ -214,6 +208,12 @@
     },
     {
       "name": "spring.elasticsearch.jest.uris",
+      "defaultValue": [
+        "http://localhost:9200"
+      ]
+    },
+    {
+      "name": "spring.elasticsearch.rest.uris",
       "defaultValue": [
         "http://localhost:9200"
       ]
@@ -1069,7 +1069,17 @@
       "description": "Path of the main dispatcher servlet.",
       "defaultValue": "/",
       "deprecation": {
-        "replacement": "server.servlet.path",
+        "replacement": "spring.mvc.servlet.path",
+        "level": "error"
+      }
+    },
+    {
+      "name": "server.servlet.path",
+      "type": "java.lang.String",
+      "description": "Path of the main dispatcher servlet.",
+      "defaultValue": "/",
+      "deprecation": {
+        "replacement": "spring.mvc.servlet.path",
         "level": "error"
       }
     },
@@ -1214,6 +1224,13 @@
         "replacement": "spring.datasource.initialization-mode",
         "level": "error"
       }
+    },
+    {
+      "name": "spring.flyway.locations",
+      "type": "java.util.List<java.lang.String>",
+      "defaultValue": [
+        "classpath:db/migration"
+      ]
     },
     {
       "name": "spring.flyway.sql-migration-suffix",

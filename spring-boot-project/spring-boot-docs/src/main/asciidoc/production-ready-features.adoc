@@ -75,6 +75,10 @@ The following technology-agnostic endpoints are available:
 |Displays a complete list of all the Spring beans in your application.
 |Yes
 
+|`caches`
+|Exposes available caches.
+|Yes
+
 |`conditions`
 |Shows the conditions that were evaluated on configuration and auto-configuration
 classes and the reasons why they did or did not match.
@@ -103,6 +107,10 @@ exchanges).
 
 |`info`
 |Displays arbitrary application info.
+|Yes
+
+|`integrationgraph`
+|Shows the Spring Integration graph.
 |Yes
 
 |`loggers`
@@ -249,6 +257,10 @@ endpoints:
 |No
 
 |`info`
+|Yes
+|Yes
+
+|`integrationgraph`
 |Yes
 |Yes
 
@@ -532,10 +544,11 @@ JSON request body. When exposed via JMX, the parameters are mapped to the parame
 the MBean's operations. Parameters are required by default. They can be made optional
 by annotating them with `@org.springframework.lang.Nullable`.
 
-NOTE: To allow the input to be mapped to the operation method's parameters, code
-implementing an endpoint should be compiled with `-parameters`. This will happen
-automatically if you are using Spring Boot's Gradle plugin or if you are using Maven
-and `spring-boot-starter-parent`.
+NOTE: To allow the input to be mapped to the operation method's parameters, Java code
+implementing an endpoint should be compiled with `-parameters`, and Kotlin code
+implementing an endpoint should be compiled with `-java-parameters`. This will happen
+automatically if you are using Spring Boot's Gradle plugin or if you are using Maven and
+`spring-boot-starter-parent`.
 
 
 
@@ -550,7 +563,7 @@ JMX or an HTTP request is converted to the required types using an instance of
 
 [[production-ready-endpoints-custom-web]]
 ==== Custom Web Endpoints
-Operations on a `@Endpoint`, `@WebEndpoint`, or `@WebEndpointExtension` are automatically
+Operations on an `@Endpoint`, `@WebEndpoint`, or `@WebEndpointExtension` are automatically
 exposed over HTTP using Jersey, Spring MVC, or Spring WebFlux.
 
 
@@ -672,7 +685,7 @@ possible.
 ==== Controller endpoints
 `@ControllerEndpoint` and `@RestControllerEndpoint` can be used to implement an endpoint
 that is only exposed by Spring MVC or Spring WebFlux. Methods are mapped using the
-standard annotations Spring MVC and Spring WebFlux annotations such as `@RequestMapping`
+standard annotations for Spring MVC and Spring WebFlux such as `@RequestMapping`
 and `@GetMapping`, with the endpoint's ID being used as a prefix for the path. Controller
 endpoints provide deeper integration with Spring's web frameworks but at the expense of
 portability. The `@Endpoint` and `@WebEndpoint` annotations should be preferred whenever
@@ -712,14 +725,19 @@ NOTE: If you have secured your application and wish to use `always`, your securi
 configuration must permit access to the health endpoint for both authenticated and
 unauthenticated users.
 
-Health information is collected from all
-{sc-spring-boot-actuator}/health/HealthIndicator.{sc-ext}[`HealthIndicator`] beans
+Health information is collected from the content of a
+{sc-spring-boot-actuator}/health/HealthIndicatorRegistry.{sc-ext}[
+`HealthIndicatorRegistry`] (by default all
+{sc-spring-boot-actuator}/health/HealthIndicator.{sc-ext}[`HealthIndicator`] instances
 defined in your `ApplicationContext`. Spring Boot includes a number of auto-configured
-`HealthIndicators`, and you can also write your own. By default, the final system state
-is derived by the `HealthAggregator`, which sorts the statuses from each
-`HealthIndicator` based on an ordered list of statuses. The first status in the sorted
-list is used as the overall health status. If no `HealthIndicator` returns a status that
-is known to the `HealthAggregator`, an `UNKNOWN` status is used.
+`HealthIndicators` and you can also write your own. By default, the final system state is
+derived by the `HealthAggregator` which sorts the statuses from each `HealthIndicator`
+based on an ordered list of statuses. The first status in the sorted list is used as the
+overall health status. If no `HealthIndicator` returns a status that is known to the
+`HealthAggregator`, an `UNKNOWN` status is used.
+
+TIP: The `HealthIndicatorRegistry` can be used to register and unregister health
+indicators at runtime.
 
 
 
@@ -859,10 +877,17 @@ The following table shows the default status mappings for the built-in statuses:
 ==== Reactive Health Indicators
 For reactive applications, such as those using Spring WebFlux, `ReactiveHealthIndicator`
 provides a non-blocking contract for getting application health. Similar to a traditional
-`HealthIndicator`, health information is collected from all
-{sc-spring-boot-actuator}/health/ReactiveHealthIndicator.{sc-ext}[`ReactiveHealthIndicator`]
-beans defined in your `ApplicationContext`. Regular `HealthIndicator` beans that do not
-check against a reactive API are included and executed on the elastic scheduler.
+`HealthIndicator`, health information is collected from the content of a
+{sc-spring-boot-actuator}/health/ReactiveHealthIndicatorRegistry.{sc-ext}[
+`ReactiveHealthIndicatorRegistry`] (by default all
+{sc-spring-boot-actuator}/health/HealthIndicator.{sc-ext}[`HealthIndicator`] and
+{sc-spring-boot-actuator}/health/ReactiveHealthIndicator.{sc-ext}[
+`ReactiveHealthIndicator`] instances defined in your `ApplicationContext`. Regular
+`HealthIndicator` that do not check against a reactive API are executed on the elastic
+scheduler.
+
+TIP: In a reactive application, The `ReactiveHealthIndicatorRegistry` can be used to
+register and unregister health indicators at runtime.
 
 To provide custom health information from a reactive API, you can register Spring beans
 that implement the
@@ -1417,7 +1442,7 @@ port to use can be provided using:
 [source,properties,indent=0]
 ----
 	management.metrics.export.ganglia.host=ganglia.example.com
-	management.metrics.export.ganglia.post=9649
+	management.metrics.export.ganglia.port=9649
 ----
 
 
@@ -1431,7 +1456,23 @@ to use can be provided using:
 [source,properties,indent=0]
 ----
 	management.metrics.export.graphite.host=graphite.example.com
-	management.metrics.export.graphite.post=9004
+	management.metrics.export.graphite.port=9004
+----
+
+Micrometer provides a default `HierarchicalNameMapper` that governs how a dimensional
+meter id is {micrometer-registry-documentation}/graphite#_hierarchical_name_mapping[mapped
+to flat hierarchical names].
+
+TIP: To take control over this behaviour, define your `GraphiteMeterRegistry` and supply
+your own `HierarchicalNameMapper`. An auto-configured `GraphiteConfig` and `Clock` beans
+are provided unless you define your own:
+
+[source,java]
+----
+@Bean
+public GraphiteMeterRegistry graphiteMeterRegistry(GraphiteConfig config, Clock clock) {
+	return new GraphiteMeterRegistry(config, clock, MY_HIERARCHICAL_MAPPER);
+}
 ----
 
 
@@ -1453,10 +1494,22 @@ server] to use can be provided using:
 ==== JMX
 Micrometer provides a hierarchical mapping to
 {micrometer-registry-documentation}/jmx[JMX], primarily as a cheap and portable way to
-view metrics locally. Spring Boot provides a default `HierarchicalNameMapper` that governs
-how a dimensional meter id is mapped to flat hierarchical names.
+view metrics locally. Micrometer provides a default `HierarchicalNameMapper` that governs
+how a dimensional meter id is
+{micrometer-registry-documentation}/jmx#_hierarchical_name_mapping[mapped to flat
+hierarchical names].
 
-TIP: To take control over this behaviour, define your own `HierarchicalNameMapper` bean.
+TIP: To take control over this behaviour, define your `JmxMeterRegistry` and supply your
+own `HierarchicalNameMapper`. An auto-configured `JmxConfig` and `Clock` beans are
+provided unless you define your own:
+
+[source,java]
+----
+@Bean
+public JmxMeterRegistry jmxMeterRegistry(JmxConfig config, Clock clock) {
+	return new JmxMeterRegistry(config, clock, MY_HIERARCHICAL_MAPPER);
+}
+----
 
 
 
@@ -1573,12 +1626,12 @@ be provided:
 	management.metrics.export.wavefront.api-token=YOUR_API_TOKEN
 ----
 
-Alternatively, you may use a a Wavefront sidecar or an internal proxy set up in your
+Alternatively, you may use a Wavefront sidecar or an internal proxy set up in your
 environment that forwards metrics data to the Wavefront API host:
 
 [source,properties,indent=0]
 ----
-	management.metrics.export.uri=proxy://localhost:7828
+	management.metrics.export.wavefront.uri=proxy://localhost:2878
 ----
 
 TIP: If publishing metrics to a Wavefront proxy (as described in
@@ -1658,14 +1711,12 @@ To customize the tags, provide a `@Bean` that implements `WebMvcTagsProvider`.
 [[production-ready-metrics-web-flux]]
 ==== Spring WebFlux Metrics
 Auto-configuration enables the instrumentation of all requests handled by WebFlux
-controllers. You can also use a helper class, `RouterFunctionMetrics`, to instrument
-applications that use WebFlux's functional programming model.
+controllers and functional handlers.
 
 By default, metrics are generated with the name `http.server.requests`. You can customize
 the name by setting the `management.metrics.web.server.requests-metric-name` property.
 
-By default, WebFlux-related metrics for the annotation-based programming model are tagged
-with the following information:
+By default, WebFlux-related metrics are tagged with the following information:
 
 * `method`, the request's method (for example, `GET` or `POST`).
 * `uri`,  the request's URI template prior to variable substitution, if possible (for
@@ -1676,29 +1727,24 @@ request.
 
 To customize the tags, provide a `@Bean` that implements `WebFluxTagsProvider`.
 
-By default, metrics for the functional programming model are tagged with the following
-information:
-
-* `method`, the request's method (for example, `GET` or `POST`).
-* `uri`,  the request's URI template prior to variable substitution, if possible (for
-example, `/api/person/{id}`).
-* `status`, the response's HTTP status code (for example, `200` or `500`).
-
-To customize the tags, use the `defaultTags` method on your `RouterFunctionMetrics`
-instance.
 
 
+[[production-ready-metrics-http-clients]]
+==== HTTP Client Metrics
+Spring Boot Actuator manages the instrumentation of both `RestTemplate` and `WebClient`.
+For that, you have to get injected with an auto-configured builder
+and use it to create instances:
 
-[[production-ready-metrics-rest-template]]
-==== RestTemplate Metrics
-The instrumentation of any `RestTemplate` created using the auto-configured
-`RestTemplateBuilder` is enabled. It is also possible to apply
-`MetricsRestTemplateCustomizer` manually.
+* `RestTemplateBuilder` for `RestTemplate`
+* `WebClient.Builder` for `WebClient`
+
+It is also possible to apply manually the customizers responsible for this instrumentation,
+namely `MetricsRestTemplateCustomizer` and `MetricsWebClientCustomizer`.
 
 By default, metrics are generated with the name, `http.client.requests`. The name can be
 customized by setting the `management.metrics.web.client.requests-metric-name` property.
 
-By default, metrics generated by an instrumented `RestTemplate` are tagged with the
+By default, metrics generated by an instrumented client are tagged with the
 following information:
 
 * `method`, the request's method (for example, `GET` or `POST`).
@@ -1707,9 +1753,10 @@ example, `/api/person/{id}`).
 * `status`, the response's HTTP status code (for example, `200` or `500`).
 * `clientName`, the host portion of the URI.
 
-To customize the tags, provide a `@Bean` that implements
-`RestTemplateExchangeTagsProvider`. There are convenience static functions in
-`RestTemplateExchangeTags`.
+To customize the tags, and depending on your choice of client, you can provide
+a `@Bean` that implements `RestTemplateExchangeTagsProvider` or
+`WebClientExchangeTagsProvider`. There are convenience static functions in
+`RestTemplateExchangeTags` and `WebClientExchangeTags`.
 
 
 
@@ -1737,15 +1784,40 @@ is required. A `CacheMetricsRegistrar` bean is made available to make that proce
 
 [[production-ready-metrics-jdbc]]
 ==== DataSource Metrics
-Auto-configuration enables the instrumentation of all available DataSource` objects with a
-metric named `jdbc`. Data source instrumentation results in gauges representing the
+Auto-configuration enables the instrumentation of all available `DataSource` objects with
+a metric named `jdbc`. Data source instrumentation results in gauges representing the
 currently active, maximum allowed, and minimum allowed connections in the pool. Each of
 these gauges has a name that is prefixed by `jdbc`.
 
 Metrics are also tagged by the name of the `DataSource` computed based on the bean name.
 
+TIP: By default, Spring Boot provides metadata for all supported data sources; you can
+add additional `DataSourcePoolMetadataProvider` beans if your favorite data source isn't
+supported out of the box. See `DataSourcePoolMetadataProvidersConfiguration` for examples.
+
 Also, Hikari-specific metrics are exposed with a `hikaricp` prefix. Each metric is tagged
 by the name of the Pool (can be controlled with `spring.datasource.name`).
+
+
+
+[[production-ready-metrics-hibernate]]
+==== Hibernate Metrics
+Auto-configuration enables the instrumentation of all available Hibernate
+`EntityManagerFactory` instances that have statistics enabled with a metric named
+`hibernate`.
+
+Metrics are also tagged by the name of the `EntityManagerFactory` that is derived from
+the bean name.
+
+To enable statistics, the standardJPA property `hibernate.generate_statistics` must be
+set to `true`. You can enable that on the auto-configured `EntityManagerFactory` as shown
+in the following example:
+
+[source,properties,indent=0]
+----
+	spring.jpa.properties.hibernate.generate_statistics=true
+----
+
 
 
 [[production-ready-metrics-rabbitmq]]
@@ -1785,6 +1857,25 @@ all meter IDs beginning with `com.example`, you can do the following:
 ----
 include::{code-examples}/actuate/metrics/MetricsFilterBeanExample.java[tag=configuration]
 ----
+
+[[production-ready-metrics-common-tags]]
+==== Common tags
+Common tag are generally used for dimensional drill-down on the operating environment like
+host, instance, region, stack, etc. Commons tags applied to all meters and can be
+configured as shown in the following example:
+
+[source,properties,indent=0]
+----
+	management.metrics.tags.region=us-east-1
+	management.metrics.tags.stack=prod
+----
+
+The example above adds a `region` and `stack` tags to all meters with a value of
+`us-east-1` and `prod` respectively.
+
+NOTE: The order of common tags is important if you are using Graphite. As the order of
+common tags cannot be guaranteed using this approach, Graphite users are advised to define
+a custom `MeterFilter` instead.
 
 
 
@@ -1923,8 +2014,8 @@ PID file, as shown in the following example:
 [indent=0]
 ----
 	org.springframework.context.ApplicationListener=\
-	org.springframework.boot.system.ApplicationPidFileWriter,\
-	org.springframework.boot.system.EmbeddedServerPortFileWriter
+	org.springframework.boot.context.ApplicationPidFileWriter,\
+	org.springframework.boot.web.context.WebServerPortFileWriter
 ----
 
 
@@ -1983,13 +2074,15 @@ services use self-signed certificates, you need to set the following property:
 
 === Custom context path
 
-If the server's context-path has been configured to anything other then `/`, the Cloud Foundry endpoints
-will not be available at the root of the application. For example, if `server.servlet.context-path=/foo`,
-Cloud Foundry endpoints will be available at `/foo/cloudfoundryapplication/*`.
+If the server's context-path has been configured to anything other then `/`, the Cloud
+Foundry endpoints will not be available at the root of the application. For example, if
+`server.servlet.context-path=/app`, Cloud Foundry endpoints will be available at
+`/app/cloudfoundryapplication/*`.
 
-If you expect the Cloud Foundry endpoints to always be available at `/cloudfoundryapplication/*`, regardless of
-the server's context-path, you will need to explicitly configure that in your application. The configuration will differ
-depending on the web server in use. For Tomcat, the following configuration can be added:
+If you expect the Cloud Foundry endpoints to always be available at
+`/cloudfoundryapplication/*`, regardless of the server's context-path, you will need to
+explicitly configure that in your application. The configuration will differ depending on
+the web server in use. For Tomcat, the following configuration can be added:
 
 [source,java,indent=0]
 ----

@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2017 the original author or authors.
+ * Copyright 2012-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,9 @@
 
 package org.springframework.boot.context.properties.source;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.function.Function;
@@ -74,7 +77,8 @@ class SpringConfigurationPropertySource implements ConfigurationPropertySource {
 		Assert.notNull(propertySource, "PropertySource must not be null");
 		Assert.notNull(mapper, "Mapper must not be null");
 		this.propertySource = propertySource;
-		this.mapper = new ExceptionSwallowingPropertyMapper(mapper);
+		this.mapper = (mapper instanceof DelegatingPropertyMapper ? mapper
+				: new DelegatingPropertyMapper(mapper));
 		this.containsDescendantOf = (containsDescendantOf != null ? containsDescendantOf
 				: (n) -> ConfigurationPropertyState.UNKNOWN);
 	}
@@ -156,9 +160,10 @@ class SpringConfigurationPropertySource implements ConfigurationPropertySource {
 	private static PropertyMapper getPropertyMapper(PropertySource<?> source) {
 		if (source instanceof SystemEnvironmentPropertySource
 				&& hasSystemEnvironmentName(source)) {
-			return SystemEnvironmentPropertyMapper.INSTANCE;
+			return new DelegatingPropertyMapper(SystemEnvironmentPropertyMapper.INSTANCE,
+					DefaultPropertyMapper.INSTANCE);
 		}
-		return DefaultPropertyMapper.INSTANCE;
+		return new DelegatingPropertyMapper(DefaultPropertyMapper.INSTANCE);
 	}
 
 	private static boolean hasSystemEnvironmentName(PropertySource<?> source) {
@@ -207,35 +212,39 @@ class SpringConfigurationPropertySource implements ConfigurationPropertySource {
 	}
 
 	/**
-	 * {@link PropertyMapper} that swallows exceptions when the mapping fails.
+	 * {@link PropertyMapper} that delegates to other {@link PropertyMapper}s and also
+	 * swallows exceptions when the mapping fails.
 	 */
-	private static class ExceptionSwallowingPropertyMapper implements PropertyMapper {
+	private static class DelegatingPropertyMapper implements PropertyMapper {
 
-		private final PropertyMapper mapper;
+		private final PropertyMapper[] mappers;
 
-		ExceptionSwallowingPropertyMapper(PropertyMapper mapper) {
-			this.mapper = mapper;
+		DelegatingPropertyMapper(PropertyMapper... mappers) {
+			this.mappers = mappers;
 		}
 
 		@Override
 		public PropertyMapping[] map(
 				ConfigurationPropertyName configurationPropertyName) {
-			try {
-				return this.mapper.map(configurationPropertyName);
-			}
-			catch (Exception ex) {
-				return NO_MAPPINGS;
-			}
+			return callMappers((mapper) -> mapper.map(configurationPropertyName));
 		}
 
 		@Override
 		public PropertyMapping[] map(String propertySourceName) {
-			try {
-				return this.mapper.map(propertySourceName);
+			return callMappers((mapper) -> mapper.map(propertySourceName));
+		}
+
+		private PropertyMapping[] callMappers(
+				Function<PropertyMapper, PropertyMapping[]> function) {
+			List<PropertyMapping> mappings = new ArrayList<>();
+			for (PropertyMapper mapper : this.mappers) {
+				try {
+					mappings.addAll(Arrays.asList(function.apply(mapper)));
+				}
+				catch (Exception ex) {
+				}
 			}
-			catch (Exception ex) {
-				return NO_MAPPINGS;
-			}
+			return mappings.toArray(new PropertyMapping[] {});
 		}
 
 	}

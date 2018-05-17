@@ -63,6 +63,16 @@ public class WelcomePageHandlerMappingTests {
 					AutoConfigurations.of(PropertyPlaceholderAutoConfiguration.class));
 
 	@Test
+	public void isOrderedAtLowPriority() {
+		this.contextRunner.withUserConfiguration(StaticResourceConfiguration.class)
+				.run((context) -> {
+					WelcomePageHandlerMapping handler = context
+							.getBean(WelcomePageHandlerMapping.class);
+					assertThat(handler.getOrder()).isEqualTo(2);
+				});
+	}
+
+	@Test
 	public void handlesRequestForStaticPageThatAcceptsTextHtml() {
 		this.contextRunner.withUserConfiguration(StaticResourceConfiguration.class)
 				.run((context) -> MockMvcBuilders.webAppContextSetup(context).build()

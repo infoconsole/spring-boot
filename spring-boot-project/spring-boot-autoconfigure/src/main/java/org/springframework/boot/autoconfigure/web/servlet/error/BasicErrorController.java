@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2017 the original author or authors.
+ * Copyright 2012-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -91,7 +91,7 @@ public class BasicErrorController extends AbstractErrorController {
 				request, isIncludeStackTrace(request, MediaType.TEXT_HTML)));
 		response.setStatus(status.value());
 		ModelAndView modelAndView = resolveErrorView(request, response, status, model);
-		return (modelAndView == null ? new ModelAndView("error", model) : modelAndView);
+		return (modelAndView != null ? modelAndView : new ModelAndView("error", model));
 	}
 
 	@RequestMapping

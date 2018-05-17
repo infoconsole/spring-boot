@@ -252,8 +252,7 @@ public class Binder {
 	}
 
 	private <T> Object bindObject(ConfigurationPropertyName name, Bindable<T> target,
-			BindHandler handler, Context context, boolean allowRecursiveBinding)
-			throws Exception {
+			BindHandler handler, Context context, boolean allowRecursiveBinding) {
 		ConfigurationProperty property = findProperty(name, context);
 		if (property == null && containsNoDescendantOf(context.streamSources(), name)) {
 			return null;
@@ -308,6 +307,9 @@ public class Binder {
 
 	private ConfigurationProperty findProperty(ConfigurationPropertyName name,
 			Context context) {
+		if (name.isEmpty()) {
+			return null;
+		}
 		return context.streamSources()
 				.map((source) -> source.getConfigurationProperty(name))
 				.filter(Objects::nonNull).findFirst().orElse(null);

@@ -93,6 +93,7 @@ public class JarFileTests {
 		assertThat(entries.nextElement().getName()).isEqualTo("special/\u00EB.dat");
 		assertThat(entries.nextElement().getName()).isEqualTo("nested.jar");
 		assertThat(entries.nextElement().getName()).isEqualTo("another-nested.jar");
+		assertThat(entries.nextElement().getName()).isEqualTo("space nested.jar");
 		assertThat(entries.hasMoreElements()).isFalse();
 		URL jarUrl = new URL("jar:" + this.rootJarFile.toURI() + "!/");
 		URLClassLoader urlClassLoader = new URLClassLoader(new URL[] { jarUrl });
@@ -135,6 +136,7 @@ public class JarFileTests {
 		assertThat(entries.nextElement().getName()).isEqualTo("special/\u00EB.dat");
 		assertThat(entries.nextElement().getName()).isEqualTo("nested.jar");
 		assertThat(entries.nextElement().getName()).isEqualTo("another-nested.jar");
+		assertThat(entries.nextElement().getName()).isEqualTo("space nested.jar");
 		assertThat(entries.hasMoreElements()).isFalse();
 	}
 
@@ -479,6 +481,26 @@ public class JarFileTests {
 		JarFile jf = new JarFile(temp);
 		jf.close();
 		assertThat(temp.delete()).isTrue();
+	}
+
+	@Test
+	public void createUrlFromStringWithContextWhenNotFound() throws Exception {
+		// gh-12483
+		JarURLConnection.setUseFastExceptions(true);
+		try {
+			JarFile.registerUrlProtocolHandler();
+			JarFile nested = this.jarFile
+					.getNestedJarFile(this.jarFile.getEntry("nested.jar"));
+			URL context = nested.getUrl();
+			new URL(context, "jar:" + this.rootJarFile.toURI() + "!/nested.jar!/3.dat")
+					.openConnection().getInputStream().close();
+			this.thrown.expect(FileNotFoundException.class);
+			new URL(context, "jar:" + this.rootJarFile.toURI() + "!/no.dat")
+					.openConnection().getInputStream();
+		}
+		finally {
+			JarURLConnection.setUseFastExceptions(false);
+		}
 	}
 
 }

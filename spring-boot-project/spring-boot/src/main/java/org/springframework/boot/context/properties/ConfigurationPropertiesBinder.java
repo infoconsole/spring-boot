@@ -55,7 +55,9 @@ class ConfigurationPropertiesBinder {
 
 	private final Validator configurationPropertiesValidator;
 
-	private final Validator jsr303Validator;
+	private final boolean jsr303Present;
+
+	private volatile Validator jsr303Validator;
 
 	private volatile Binder binder;
 
@@ -66,14 +68,15 @@ class ConfigurationPropertiesBinder {
 				.getPropertySources();
 		this.configurationPropertiesValidator = getConfigurationPropertiesValidator(
 				applicationContext, validatorBeanName);
-		this.jsr303Validator = ConfigurationPropertiesJsr303Validator
-				.getIfJsr303Present(applicationContext);
+		this.jsr303Present = ConfigurationPropertiesJsr303Validator
+				.isJsr303Present(applicationContext);
 	}
 
 	public void bind(Bindable<?> target) {
 		ConfigurationProperties annotation = target
 				.getAnnotation(ConfigurationProperties.class);
-		Assert.state(annotation != null, "Missing @ConfigurationProperties on " + target);
+		Assert.state(annotation != null,
+				() -> "Missing @ConfigurationProperties on " + target);
 		List<Validator> validators = getValidators(target);
 		BindHandler bindHandler = getBindHandler(annotation, validators);
 		getBinder().bind(annotation.prefix(), target, bindHandler);
@@ -92,14 +95,21 @@ class ConfigurationPropertiesBinder {
 		if (this.configurationPropertiesValidator != null) {
 			validators.add(this.configurationPropertiesValidator);
 		}
-		if (this.jsr303Validator != null
-				&& target.getAnnotation(Validated.class) != null) {
-			validators.add(this.jsr303Validator);
+		if (this.jsr303Present && target.getAnnotation(Validated.class) != null) {
+			validators.add(getJsr303Validator());
 		}
 		if (target.getValue() != null && target.getValue().get() instanceof Validator) {
 			validators.add((Validator) target.getValue().get());
 		}
 		return validators;
+	}
+
+	private Validator getJsr303Validator() {
+		if (this.jsr303Validator == null) {
+			this.jsr303Validator = new ConfigurationPropertiesJsr303Validator(
+					this.applicationContext);
+		}
+		return this.jsr303Validator;
 	}
 
 	private BindHandler getBindHandler(ConfigurationProperties annotation,

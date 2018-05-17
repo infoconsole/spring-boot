@@ -224,7 +224,7 @@ public abstract class EndpointDiscoverer<E extends ExposableEndpoint<O>, O exten
 	}
 
 	private <T> T getLast(List<T> list) {
-		return CollectionUtils.isEmpty(list) ? null : list.get(list.size() - 1);
+		return (CollectionUtils.isEmpty(list) ? null : list.get(list.size() - 1));
 	}
 
 	private void assertNoDuplicateOperations(EndpointBean endpointBean,
@@ -432,7 +432,7 @@ public abstract class EndpointDiscoverer<E extends ExposableEndpoint<O>, O exten
 			this.enabledByDefault = (Boolean) attributes.get("enableByDefault");
 			this.filter = getFilter(this.bean.getClass());
 			Assert.state(StringUtils.hasText(this.id),
-					"No @Endpoint id attribute specified for "
+					() -> "No @Endpoint id attribute specified for "
 							+ bean.getClass().getName());
 		}
 

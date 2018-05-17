@@ -19,6 +19,7 @@ package org.springframework.boot.context.properties.bind;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Properties;
+import java.util.function.Supplier;
 
 import org.springframework.boot.context.properties.bind.Binder.Context;
 import org.springframework.boot.context.properties.source.ConfigurationProperty;
@@ -54,8 +55,8 @@ class MapBinder extends AggregateBinder<Map<Object, Object>> {
 	@Override
 	protected Object bindAggregate(ConfigurationPropertyName name, Bindable<?> target,
 			AggregateElementBinder elementBinder) {
-		Map<Object, Object> map = CollectionFactory.createMap((target.getValue() == null
-				? target.getType().resolve(Object.class) : Map.class), 0);
+		Map<Object, Object> map = CollectionFactory.createMap((target.getValue() != null
+				? Map.class : target.getType().resolve(Object.class)), 0);
 		Bindable<?> resolvedTarget = resolveTarget(target);
 		boolean hasDescendants = getContext().streamSources().anyMatch((source) -> source
 				.containsDescendantOf(name) == ConfigurationPropertyState.PRESENT);
@@ -82,10 +83,27 @@ class MapBinder extends AggregateBinder<Map<Object, Object>> {
 	}
 
 	@Override
-	protected Map<Object, Object> merge(Map<Object, Object> existing,
+	@SuppressWarnings("unchecked")
+	protected Map<Object, Object> merge(Supplier<?> existing,
 			Map<Object, Object> additional) {
-		existing.putAll(additional);
-		return existing;
+		Map<Object, Object> existingMap = (Map<Object, Object>) existing.get();
+		if (existingMap == null) {
+			return additional;
+		}
+		existingMap.putAll(additional);
+		return copyIfPossible(existingMap);
+	}
+
+	private Map<Object, Object> copyIfPossible(Map<Object, Object> map) {
+		try {
+			Map<Object, Object> result = CollectionFactory.createMap(map.getClass(),
+					map.size());
+			result.putAll(map);
+			return result;
+		}
+		catch (Exception ex) {
+			return map;
+		}
 	}
 
 	private class EntryBinder {
@@ -179,7 +197,7 @@ class MapBinder extends AggregateBinder<Map<Object, Object>> {
 			StringBuilder result = new StringBuilder();
 			for (int i = this.root.getNumberOfElements(); i < name
 					.getNumberOfElements(); i++) {
-				result.append(result.length() == 0 ? "" : ".");
+				result.append(result.length() != 0 ? "." : "");
 				result.append(name.getElement(i, Form.ORIGINAL));
 			}
 			return result.toString();

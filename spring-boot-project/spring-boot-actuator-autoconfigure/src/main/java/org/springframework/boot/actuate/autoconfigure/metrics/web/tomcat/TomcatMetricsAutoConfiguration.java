@@ -30,7 +30,6 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplicat
 import org.springframework.boot.web.embedded.tomcat.TomcatReactiveWebServerFactory;
 import org.springframework.boot.web.embedded.tomcat.TomcatServletWebServerFactory;
 import org.springframework.boot.web.server.WebServerFactoryCustomizer;
-import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 
 /**
@@ -46,9 +45,9 @@ public class TomcatMetricsAutoConfiguration {
 	private volatile Context context;
 
 	@Bean
-	@ConditionalOnMissingBean(TomcatMetrics.class)
-	public TomcatMetrics tomcatMetrics(ApplicationContext applicationContext) {
-		return new TomcatMetrics(this.context == null ? null : this.context.getManager(),
+	@ConditionalOnMissingBean
+	public TomcatMetrics tomcatMetrics() {
+		return new TomcatMetrics(this.context != null ? this.context.getManager() : null,
 				Collections.emptyList());
 	}
 

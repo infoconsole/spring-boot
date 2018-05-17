@@ -335,10 +335,17 @@ public class SpringApplication {
 			callRunners(context, applicationArguments);
 		}
 		catch (Throwable ex) {
-			handleRunFailure(context, listeners, exceptionReporters, ex);
+			handleRunFailure(context, ex, exceptionReporters, listeners);
 			throw new IllegalStateException(ex);
 		}
-		listeners.running(context);
+
+		try {
+			listeners.running(context);
+		}
+		catch (Throwable ex) {
+			handleRunFailure(context, ex, exceptionReporters, null);
+			throw new IllegalStateException(ex);
+		}
 		return context;
 	}
 
@@ -546,8 +553,8 @@ public class SpringApplication {
 		if (this.bannerMode == Banner.Mode.OFF) {
 			return null;
 		}
-		ResourceLoader resourceLoader = this.resourceLoader != null ? this.resourceLoader
-				: new DefaultResourceLoader(getClassLoader());
+		ResourceLoader resourceLoader = (this.resourceLoader != null ? this.resourceLoader
+				: new DefaultResourceLoader(getClassLoader()));
 		SpringApplicationBannerPrinter bannerPrinter = new SpringApplicationBannerPrinter(
 				resourceLoader, this.banner);
 		if (this.bannerMode == Mode.LOG) {
@@ -795,13 +802,15 @@ public class SpringApplication {
 	}
 
 	private void handleRunFailure(ConfigurableApplicationContext context,
-			SpringApplicationRunListeners listeners,
+			Throwable exception,
 			Collection<SpringBootExceptionReporter> exceptionReporters,
-			Throwable exception) {
+			SpringApplicationRunListeners listeners) {
 		try {
 			try {
 				handleExitCode(context, exception);
-				listeners.failed(context, exception);
+				if (listeners != null) {
+					listeners.failed(context, exception);
+				}
 			}
 			finally {
 				reportFailure(exceptionReporters, exception);
@@ -952,8 +961,8 @@ public class SpringApplication {
 	 */
 	@Deprecated
 	public void setWebEnvironment(boolean webEnvironment) {
-		this.webApplicationType = webEnvironment ? WebApplicationType.SERVLET
-				: WebApplicationType.NONE;
+		this.webApplicationType = (webEnvironment ? WebApplicationType.SERVLET
+				: WebApplicationType.NONE);
 	}
 
 	/**
@@ -1295,7 +1304,7 @@ public class SpringApplication {
 		}
 		catch (Exception ex) {
 			ex.printStackTrace();
-			exitCode = (exitCode == 0 ? 1 : exitCode);
+			exitCode = (exitCode != 0 ? exitCode : 1);
 		}
 		return exitCode;
 	}

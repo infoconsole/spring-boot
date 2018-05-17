@@ -47,7 +47,7 @@ public class ReactiveWebServerFactoryAutoConfigurationTests {
 
 	@Test
 	public void createFromConfigClass() {
-		this.contextRunner.withUserConfiguration(MockWebServerAutoConfiguration.class,
+		this.contextRunner.withUserConfiguration(MockWebServerConfiguration.class,
 				HttpHandlerConfiguration.class).run((context) -> {
 					assertThat(context.getBeansOfType(ReactiveWebServerFactory.class))
 							.hasSize(1);
@@ -61,7 +61,7 @@ public class ReactiveWebServerFactoryAutoConfigurationTests {
 
 	@Test
 	public void missingHttpHandler() {
-		this.contextRunner.withUserConfiguration(MockWebServerAutoConfiguration.class)
+		this.contextRunner.withUserConfiguration(MockWebServerConfiguration.class)
 				.run((context) -> assertThat(context.getStartupFailure())
 						.isInstanceOf(ApplicationContextException.class)
 						.hasMessageContaining("missing HttpHandler bean"));
@@ -70,7 +70,7 @@ public class ReactiveWebServerFactoryAutoConfigurationTests {
 	@Test
 	public void multipleHttpHandler() {
 		this.contextRunner
-				.withUserConfiguration(MockWebServerAutoConfiguration.class,
+				.withUserConfiguration(MockWebServerConfiguration.class,
 						HttpHandlerConfiguration.class, TooManyHttpHandlers.class)
 				.run((context) -> assertThat(context.getStartupFailure())
 						.isInstanceOf(ApplicationContextException.class)
@@ -80,7 +80,7 @@ public class ReactiveWebServerFactoryAutoConfigurationTests {
 
 	@Test
 	public void customizeReactiveWebServer() {
-		this.contextRunner.withUserConfiguration(MockWebServerAutoConfiguration.class,
+		this.contextRunner.withUserConfiguration(MockWebServerConfiguration.class,
 				HttpHandlerConfiguration.class, ReactiveWebServerCustomization.class)
 				.run((context) -> assertThat(
 						context.getBean(MockReactiveWebServerFactory.class).getPort())
@@ -90,9 +90,11 @@ public class ReactiveWebServerFactoryAutoConfigurationTests {
 	@Test
 	public void defaultWebServerIsTomcat() {
 		// Tomcat should be chosen over Netty if the Tomcat library is present.
-		this.contextRunner.withUserConfiguration(HttpHandlerConfiguration.class).run(
-				(context) -> assertThat(context.getBean(ReactiveWebServerFactory.class))
-						.isInstanceOf(TomcatReactiveWebServerFactory.class));
+		this.contextRunner.withUserConfiguration(HttpHandlerConfiguration.class)
+				.withPropertyValues("server.port=0")
+				.run((context) -> assertThat(
+						context.getBean(ReactiveWebServerFactory.class))
+								.isInstanceOf(TomcatReactiveWebServerFactory.class));
 	}
 
 	@Configuration
@@ -126,7 +128,7 @@ public class ReactiveWebServerFactoryAutoConfigurationTests {
 	}
 
 	@Configuration
-	public static class MockWebServerAutoConfiguration {
+	public static class MockWebServerConfiguration {
 
 		@Bean
 		public MockReactiveWebServerFactory mockReactiveWebServerFactory() {

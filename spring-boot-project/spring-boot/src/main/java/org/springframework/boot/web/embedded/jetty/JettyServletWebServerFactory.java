@@ -23,14 +23,11 @@ import java.net.InetSocketAddress;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.channels.ReadableByteChannel;
-import java.nio.charset.Charset;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
-import java.util.Locale;
-import java.util.Map;
 
 import org.eclipse.jetty.http.MimeTypes;
 import org.eclipse.jetty.server.AbstractConnector;
@@ -249,16 +246,13 @@ public class JettyServletWebServerFactory extends AbstractServletWebServerFactor
 	}
 
 	private void addLocaleMappings(WebAppContext context) {
-		for (Map.Entry<Locale, Charset> entry : getLocaleCharsetMappings().entrySet()) {
-			Locale locale = entry.getKey();
-			Charset charset = entry.getValue();
-			context.addLocaleEncoding(locale.toString(), charset.toString());
-		}
+		getLocaleCharsetMappings().forEach((locale, charset) -> context
+				.addLocaleEncoding(locale.toString(), charset.toString()));
 	}
 
 	private File getTempDirectory() {
 		String temp = System.getProperty("java.io.tmpdir");
-		return (temp == null ? null : new File(temp));
+		return (temp != null ? new File(temp) : null);
 	}
 
 	private void configureDocumentRoot(WebAppContext handler) {
@@ -266,11 +260,11 @@ public class JettyServletWebServerFactory extends AbstractServletWebServerFactor
 		File docBase = (root != null ? root : createTempDir("jetty-docbase"));
 		try {
 			List<Resource> resources = new ArrayList<>();
-			Resource rootResource = docBase.isDirectory()
+			Resource rootResource = (docBase.isDirectory()
 					? Resource.newResource(docBase.getCanonicalFile())
-					: JarResource.newJarResource(Resource.newResource(docBase));
+					: JarResource.newJarResource(Resource.newResource(docBase)));
 			resources.add(
-					root == null ? rootResource : new LoaderHidingResource(rootResource));
+					root != null ? new LoaderHidingResource(rootResource) : rootResource);
 			for (URL resourceJarUrl : this.getUrlsOfJarsWithMetaInfResources()) {
 				Resource resource = createResource(resourceJarUrl);
 				if (resource.exists() && resource.isDirectory()) {
@@ -285,9 +279,9 @@ public class JettyServletWebServerFactory extends AbstractServletWebServerFactor
 		}
 	}
 
-	private Resource createResource(URL url) throws IOException {
+	private Resource createResource(URL url) throws Exception {
 		if ("file".equals(url.getProtocol())) {
-			File file = new File(getDecodedFile(url));
+			File file = new File(url.toURI());
 			if (file.isFile()) {
 				return Resource.newResource("jar:" + url + "!/META-INF/resources");
 			}

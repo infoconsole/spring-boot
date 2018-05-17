@@ -80,7 +80,8 @@ public class LiquibaseAutoConfiguration {
 
 	@Configuration
 	@ConditionalOnMissingBean(SpringLiquibase.class)
-	@EnableConfigurationProperties(LiquibaseProperties.class)
+	@EnableConfigurationProperties({ DataSourceProperties.class,
+			LiquibaseProperties.class })
 	@Import(LiquibaseJpaDependencyConfiguration.class)
 	public static class LiquibaseConfiguration {
 
@@ -128,6 +129,7 @@ public class LiquibaseAutoConfiguration {
 			liquibase.setLabels(this.properties.getLabels());
 			liquibase.setChangeLogParameters(this.properties.getParameters());
 			liquibase.setRollbackFile(this.properties.getRollbackFile());
+			liquibase.setTestRollbackOnUpdate(this.properties.isTestRollbackOnUpdate());
 			return liquibase;
 		}
 
@@ -167,7 +169,7 @@ public class LiquibaseAutoConfiguration {
 		private String getProperty(Supplier<String> property,
 				Supplier<String> defaultValue) {
 			String value = property.get();
-			return value == null ? defaultValue.get() : value;
+			return (value != null ? value : defaultValue.get());
 		}
 
 	}

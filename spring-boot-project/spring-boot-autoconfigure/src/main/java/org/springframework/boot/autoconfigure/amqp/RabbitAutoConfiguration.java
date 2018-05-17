@@ -95,7 +95,8 @@ public class RabbitAutoConfiguration {
 		@Bean
 		public CachingConnectionFactory rabbitConnectionFactory(
 				RabbitProperties properties,
-				ObjectProvider<ConnectionNameStrategy> connectionNameStrategy) throws Exception {
+				ObjectProvider<ConnectionNameStrategy> connectionNameStrategy)
+				throws Exception {
 			PropertyMapper map = PropertyMapper.get();
 			CachingConnectionFactory factory = new CachingConnectionFactory(
 					getRabbitConnectionFactoryBean(properties).getObject());
@@ -166,7 +167,7 @@ public class RabbitAutoConfiguration {
 
 		@Bean
 		@ConditionalOnSingleCandidate(ConnectionFactory.class)
-		@ConditionalOnMissingBean(RabbitTemplate.class)
+		@ConditionalOnMissingBean
 		public RabbitTemplate rabbitTemplate(ConnectionFactory connectionFactory) {
 			PropertyMapper map = PropertyMapper.get();
 			RabbitTemplate template = new RabbitTemplate(connectionFactory);
@@ -212,7 +213,7 @@ public class RabbitAutoConfiguration {
 		@Bean
 		@ConditionalOnSingleCandidate(ConnectionFactory.class)
 		@ConditionalOnProperty(prefix = "spring.rabbitmq", name = "dynamic", matchIfMissing = true)
-		@ConditionalOnMissingBean(AmqpAdmin.class)
+		@ConditionalOnMissingBean
 		public AmqpAdmin amqpAdmin(ConnectionFactory connectionFactory) {
 			return new RabbitAdmin(connectionFactory);
 		}

@@ -119,14 +119,17 @@ public class DefaultErrorWebExceptionHandler extends AbstractErrorWebExceptionHa
 		boolean includeStackTrace = isIncludeStackTrace(request, MediaType.TEXT_HTML);
 		Map<String, Object> error = getErrorAttributes(request, includeStackTrace);
 		HttpStatus errorStatus = getHttpStatus(error);
-		ServerResponse.BodyBuilder response = ServerResponse.status(errorStatus)
+		ServerResponse.BodyBuilder responseBody = ServerResponse.status(errorStatus)
 				.contentType(MediaType.TEXT_HTML);
 		return Flux
 				.just("error/" + errorStatus.toString(),
 						"error/" + SERIES_VIEWS.get(errorStatus.series()), "error/error")
-				.flatMap((viewName) -> renderErrorView(viewName, response, error))
-				.switchIfEmpty(renderDefaultErrorView(response, error)).next()
-				.doOnNext((resp) -> logError(request, errorStatus));
+				.flatMap((viewName) -> renderErrorView(viewName, responseBody, error))
+				.switchIfEmpty(
+						this.errorProperties.getWhitelabel().isEnabled()
+								? renderDefaultErrorView(responseBody, error)
+								: Mono.error(getError(request)))
+				.next().doOnNext((response) -> logError(request, errorStatus));
 	}
 
 	/**

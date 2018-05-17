@@ -61,7 +61,7 @@ Spring Boot supports the following embedded servlet containers:
 |3.1
 |===
 
-You can also deploy Spring Boot applications to any Servlet 3.0+ compatible container.
+You can also deploy Spring Boot applications to any Servlet 3.1+ compatible container.
 
 
 
@@ -384,6 +384,24 @@ use the following commands:
 
 NOTE: If you install the Spring Boot CLI by using Homebrew or MacPorts, the command-line
 completion scripts are automatically registered with your shell.
+
+
+
+[[getting-started-scoop-cli-installation]]
+==== Windows Scoop Installation
+If you are on a Windows and use http://scoop.sh/[Scoop], you can install the Spring Boot
+CLI by using the following commands:
+
+[indent=0]
+----
+	> scoop bucket add extras
+	> scoop install springboot
+----
+
+Scoop installs `spring` to `~/scoop/apps/springboot/current/bin`.
+
+NOTE: If you do not see the app manifest, your installation of scoop might be out-of-date.
+In that case, run `scoop update` and try again.
 
 
 

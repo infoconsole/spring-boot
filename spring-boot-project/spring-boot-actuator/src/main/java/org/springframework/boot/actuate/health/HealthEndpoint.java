@@ -34,7 +34,8 @@ public class HealthEndpoint {
 	private final HealthIndicator healthIndicator;
 
 	/**
-	 * Create a new {@link HealthEndpoint} instance.
+	 * Create a new {@link HealthEndpoint} instance that will use the given
+	 * {@code healthIndicator} to generate its response.
 	 * @param healthIndicator the health indicator
 	 */
 	public HealthEndpoint(HealthIndicator healthIndicator) {

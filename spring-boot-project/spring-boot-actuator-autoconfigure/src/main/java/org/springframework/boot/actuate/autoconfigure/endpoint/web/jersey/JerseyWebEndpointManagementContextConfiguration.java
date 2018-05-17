@@ -33,7 +33,6 @@ import org.springframework.boot.actuate.endpoint.web.EndpointMapping;
 import org.springframework.boot.actuate.endpoint.web.EndpointMediaTypes;
 import org.springframework.boot.actuate.endpoint.web.ExposableWebEndpoint;
 import org.springframework.boot.actuate.endpoint.web.WebEndpointsSupplier;
-import org.springframework.boot.actuate.endpoint.web.annotation.ControllerEndpointsSupplier;
 import org.springframework.boot.actuate.endpoint.web.annotation.ServletEndpointsSupplier;
 import org.springframework.boot.actuate.endpoint.web.jersey.JerseyEndpointResourceFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
@@ -50,25 +49,30 @@ import org.springframework.context.annotation.Configuration;
  *
  * @author Andy Wilkinson
  * @author Phillip Webb
+ * @author Michael Simons
  */
 @Configuration
 @ConditionalOnWebApplication(type = Type.SERVLET)
 @ConditionalOnClass(ResourceConfig.class)
-@ConditionalOnBean({ ResourceConfig.class, WebEndpointsSupplier.class })
+@ConditionalOnBean(WebEndpointsSupplier.class)
 @ConditionalOnMissingBean(type = "org.springframework.web.servlet.DispatcherServlet")
 class JerseyWebEndpointManagementContextConfiguration {
+
+	@ConditionalOnMissingBean(ResourceConfig.class)
+	@Bean
+	public ResourceConfig resourceConfig() {
+		return new ResourceConfig();
+	}
 
 	@Bean
 	public ResourceConfigCustomizer webEndpointRegistrar(
 			WebEndpointsSupplier webEndpointsSupplier,
 			ServletEndpointsSupplier servletEndpointsSupplier,
-			ControllerEndpointsSupplier controllerEndpointsSupplier,
 			EndpointMediaTypes endpointMediaTypes,
 			WebEndpointProperties webEndpointProperties) {
 		List<ExposableEndpoint<?>> allEndpoints = new ArrayList<>();
 		allEndpoints.addAll(webEndpointsSupplier.getEndpoints());
 		allEndpoints.addAll(servletEndpointsSupplier.getEndpoints());
-		allEndpoints.addAll(controllerEndpointsSupplier.getEndpoints());
 		return (resourceConfig) -> {
 			JerseyEndpointResourceFactory resourceFactory = new JerseyEndpointResourceFactory();
 			String basePath = webEndpointProperties.getBasePath();
@@ -78,7 +82,7 @@ class JerseyWebEndpointManagementContextConfiguration {
 			resourceConfig.registerResources(
 					new HashSet<>(resourceFactory.createEndpointResources(endpointMapping,
 							webEndpoints, endpointMediaTypes,
-							new EndpointLinksResolver(allEndpoints))));
+							new EndpointLinksResolver(allEndpoints, basePath))));
 		};
 	}
 

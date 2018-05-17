@@ -51,16 +51,16 @@ import org.springframework.context.annotation.Configuration;
 public class WavefrontMetricsExportAutoConfiguration {
 
 	@Bean
-	@ConditionalOnMissingBean(WavefrontConfig.class)
+	@ConditionalOnMissingBean
 	public WavefrontConfig wavefrontConfig(WavefrontProperties props) {
 		return new WavefrontPropertiesConfigAdapter(props);
 	}
 
 	@Bean
 	@ConditionalOnMissingBean
-	public WavefrontMeterRegistry wavefrontMeterRegistry(WavefrontConfig config,
+	public WavefrontMeterRegistry wavefrontMeterRegistry(WavefrontConfig wavefrontConfig,
 			Clock clock) {
-		return new WavefrontMeterRegistry(config, clock);
+		return new WavefrontMeterRegistry(wavefrontConfig, clock);
 	}
 
 }

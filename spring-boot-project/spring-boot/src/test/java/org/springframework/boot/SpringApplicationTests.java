@@ -106,7 +106,6 @@ import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 
@@ -655,7 +654,7 @@ public class SpringApplicationTests {
 		finally {
 			verify(listener).onApplicationEvent(isA(ApplicationStartedEvent.class));
 			verify(listener).onApplicationEvent(isA(ApplicationFailedEvent.class));
-			verify(listener, times(0))
+			verify(listener, never())
 					.onApplicationEvent(isA(ApplicationReadyEvent.class));
 		}
 	}
@@ -681,7 +680,7 @@ public class SpringApplicationTests {
 		finally {
 			verify(listener).onApplicationEvent(isA(ApplicationStartedEvent.class));
 			verify(listener).onApplicationEvent(isA(ApplicationFailedEvent.class));
-			verify(listener, times(0))
+			verify(listener, never())
 					.onApplicationEvent(isA(ApplicationReadyEvent.class));
 		}
 	}
@@ -703,8 +702,34 @@ public class SpringApplicationTests {
 		}
 		finally {
 			verify(listener).onApplicationEvent(isA(ApplicationReadyEvent.class));
-			verify(listener, times(0))
+			verify(listener, never())
 					.onApplicationEvent(isA(ApplicationFailedEvent.class));
+		}
+	}
+
+	@Test
+	public void failureInReadyEventListenerCloseApplicationContext() {
+		SpringApplication application = new SpringApplication(ExampleConfig.class);
+		application.setWebApplicationType(WebApplicationType.NONE);
+		ExitCodeListener exitCodeListener = new ExitCodeListener();
+		application.addListeners(exitCodeListener);
+		@SuppressWarnings("unchecked")
+		ApplicationListener<SpringApplicationEvent> listener = mock(
+				ApplicationListener.class);
+		application.addListeners(listener);
+		ExitStatusException failure = new ExitStatusException();
+		willThrow(failure).given(listener)
+				.onApplicationEvent(isA(ApplicationReadyEvent.class));
+		try {
+			application.run();
+			fail("Run should have failed with a RuntimeException");
+		}
+		catch (RuntimeException ex) {
+			verify(listener).onApplicationEvent(isA(ApplicationReadyEvent.class));
+			verify(listener, never())
+					.onApplicationEvent(isA(ApplicationFailedEvent.class));
+			assertThat(exitCodeListener.getExitCode()).isEqualTo(11);
+			assertThat(this.output.toString()).contains("Application run failed");
 		}
 	}
 
@@ -1357,7 +1382,7 @@ public class SpringApplicationTests {
 
 	}
 
-	static abstract class AbstractTestRunner implements ApplicationContextAware, Ordered {
+	abstract static class AbstractTestRunner implements ApplicationContextAware, Ordered {
 
 		private final String[] expectedBefore;
 
@@ -1428,14 +1453,14 @@ public class SpringApplicationTests {
 
 	private static class ExitCodeListener implements ApplicationListener<ExitCodeEvent> {
 
-		private int exitCode;
+		private Integer exitCode;
 
 		@Override
 		public void onApplicationEvent(ExitCodeEvent event) {
 			this.exitCode = event.getExitCode();
 		}
 
-		public int getExitCode() {
+		public Integer getExitCode() {
 			return this.exitCode;
 		}
 
@@ -1452,7 +1477,7 @@ public class SpringApplicationTests {
 		@Override
 		public Resource getResource(String path) {
 			Resource resource = this.resources.get(path);
-			return (resource == null ? new ClassPathResource("doesnotexist") : resource);
+			return (resource != null ? resource : new ClassPathResource("doesnotexist"));
 		}
 
 		@Override

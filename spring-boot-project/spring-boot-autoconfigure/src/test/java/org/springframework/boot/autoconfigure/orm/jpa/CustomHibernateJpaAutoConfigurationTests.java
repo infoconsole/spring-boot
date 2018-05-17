@@ -68,8 +68,8 @@ public class CustomHibernateJpaAutoConfigurationTests {
 						+ "org.hibernate.cfg.naming.ImprovedNamingStrategyDelegator")
 				.run((context) -> {
 					JpaProperties bean = context.getBean(JpaProperties.class);
-					Map<String, Object> hibernateProperties = bean.getHibernateProperties(
-							new HibernateSettings());
+					Map<String, Object> hibernateProperties = bean
+							.getHibernateProperties(new HibernateSettings());
 					assertThat(hibernateProperties.get("hibernate.ejb.naming_strategy"))
 							.isNull();
 				});
@@ -136,7 +136,7 @@ public class CustomHibernateJpaAutoConfigurationTests {
 				given(dataSource.getConnection().getMetaData())
 						.willReturn(mock(DatabaseMetaData.class));
 			}
-			catch (SQLException e) {
+			catch (SQLException ex) {
 				// Do nothing
 			}
 			return dataSource;

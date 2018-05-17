@@ -462,6 +462,18 @@ public class ConfigurationPropertiesTests {
 	}
 
 	@Test
+	public void loadWhenDotsInSystemEnvironmentPropertiesShouldBind() {
+		this.context.getEnvironment().getPropertySources()
+				.addLast(new SystemEnvironmentPropertySource(
+						StandardEnvironment.SYSTEM_ENVIRONMENT_PROPERTY_SOURCE_NAME,
+						Collections.singletonMap("com.example.bar", "baz")));
+		load(SimplePrefixedProperties.class);
+		SimplePrefixedProperties bean = this.context
+				.getBean(SimplePrefixedProperties.class);
+		assertThat(bean.getBar()).isEqualTo("baz");
+	}
+
+	@Test
 	public void loadWhenOverridingPropertiesShouldBind() {
 		MutablePropertySources sources = this.context.getEnvironment()
 				.getPropertySources();
@@ -819,6 +831,7 @@ public class ConfigurationPropertiesTests {
 		public NonValidatedJsr303Properties properties() {
 			return new NonValidatedJsr303Properties();
 		}
+
 	}
 
 	@Configuration
@@ -1362,6 +1375,7 @@ public class ConfigurationPropertiesTests {
 	interface InterfaceForValidatedImplementation {
 
 		String getFoo();
+
 	}
 
 	@ConfigurationProperties("test")
@@ -1675,6 +1689,7 @@ public class ConfigurationPropertiesTests {
 			String[] content = StringUtils.split(source, " ");
 			return new Person(content[0], content[1]);
 		}
+
 	}
 
 	static class GenericPersonConverter implements GenericConverter {
@@ -1692,6 +1707,7 @@ public class ConfigurationPropertiesTests {
 			String[] content = StringUtils.split((String) source, " ");
 			return new Person(content[0], content[1]);
 		}
+
 	}
 
 	static class PersonPropertyEditor extends PropertyEditorSupport {

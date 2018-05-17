@@ -25,9 +25,6 @@ import java.util.function.Supplier;
 
 import javax.sql.DataSource;
 
-import org.hibernate.boot.model.naming.ImplicitNamingStrategy;
-import org.hibernate.boot.model.naming.PhysicalNamingStrategy;
-
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.orm.jpa.vendor.Database;
 import org.springframework.util.ObjectUtils;
@@ -215,9 +212,7 @@ public class JpaProperties {
 				HibernateSettings settings) {
 			Map<String, Object> result = new HashMap<>(existing);
 			applyNewIdGeneratorMappings(result);
-			getNaming().applyNamingStrategies(result,
-					settings.getImplicitNamingStrategy(),
-					settings.getPhysicalNamingStrategy());
+			getNaming().applyNamingStrategies(result);
 			String ddlAuto = determineDdlAuto(existing, settings::getDdlAuto);
 			if (StringUtils.hasText(ddlAuto) && !"none".equals(ddlAuto)) {
 				result.put("hibernate.hbm2ddl.auto", ddlAuto);
@@ -245,17 +240,11 @@ public class JpaProperties {
 
 		private String determineDdlAuto(Map<String, String> existing,
 				Supplier<String> defaultDdlAuto) {
-			if (!existing.containsKey("hibernate.hbm2ddl.auto")) {
-				String ddlAuto = (this.ddlAuto != null ? this.ddlAuto
-						: defaultDdlAuto.get());
-				if (!"none".equals(ddlAuto)) {
-					return ddlAuto;
-				}
+			String ddlAuto = existing.get("hibernate.hbm2ddl.auto");
+			if (ddlAuto != null) {
+				return ddlAuto;
 			}
-			if (existing.containsKey("hibernate.hbm2ddl.auto")) {
-				return existing.get("hibernate.hbm2ddl.auto");
-			}
-			return "none";
+			return this.ddlAuto != null ? this.ddlAuto : defaultDdlAuto.get();
 		}
 
 	}
@@ -292,17 +281,11 @@ public class JpaProperties {
 			this.physicalStrategy = physicalStrategy;
 		}
 
-		private void applyNamingStrategies(Map<String, Object> properties,
-				ImplicitNamingStrategy implicitStrategyBean,
-				PhysicalNamingStrategy physicalStrategyBean) {
+		private void applyNamingStrategies(Map<String, Object> properties) {
 			applyNamingStrategy(properties, "hibernate.implicit_naming_strategy",
-					implicitStrategyBean != null ? implicitStrategyBean
-							: this.implicitStrategy,
-					DEFAULT_IMPLICIT_STRATEGY);
+					this.implicitStrategy, DEFAULT_IMPLICIT_STRATEGY);
 			applyNamingStrategy(properties, "hibernate.physical_naming_strategy",
-					physicalStrategyBean != null ? physicalStrategyBean
-							: this.physicalStrategy,
-					DEFAULT_PHYSICAL_STRATEGY);
+					this.physicalStrategy, DEFAULT_PHYSICAL_STRATEGY);
 		}
 
 		private void applyNamingStrategy(Map<String, Object> properties, String key,

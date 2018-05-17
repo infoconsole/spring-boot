@@ -79,11 +79,10 @@ public class ServletContextInitializerBeans
 		addServletContextInitializerBeans(beanFactory);
 		addAdaptableBeans(beanFactory);
 		List<ServletContextInitializer> sortedInitializers = new ArrayList<>();
-		for (Map.Entry<?, List<ServletContextInitializer>> entry : this.initializers
-				.entrySet()) {
-			AnnotationAwareOrderComparator.sort(entry.getValue());
-			sortedInitializers.addAll(entry.getValue());
-		}
+		this.initializers.values().forEach((contextInitializers) -> {
+			AnnotationAwareOrderComparator.sort(contextInitializers);
+			sortedInitializers.addAll(contextInitializers);
+		});
 		this.sortedList = Collections.unmodifiableList(sortedInitializers);
 	}
 
@@ -271,7 +270,7 @@ public class ServletContextInitializerBeans
 		@Override
 		public RegistrationBean createRegistrationBean(String name, Servlet source,
 				int totalNumberOfSourceBeans) {
-			String url = (totalNumberOfSourceBeans == 1 ? "/" : "/" + name + "/");
+			String url = (totalNumberOfSourceBeans != 1 ? "/" + name + "/" : "/");
 			if (name.equals(DISPATCHER_SERVLET_NAME)) {
 				url = "/"; // always map the main dispatcherServlet to "/"
 			}

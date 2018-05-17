@@ -168,6 +168,7 @@ public class BindFailureAnalyzerTests {
 		public void setListValue(List<String> listValue) {
 			this.listValue = listValue;
 		}
+
 	}
 
 	@ConfigurationProperties("test.foo")
@@ -202,7 +203,7 @@ public class BindFailureAnalyzerTests {
 
 	enum Fruit {
 
-		APPLE, BANANA, ORANGE;
+		APPLE, BANANA, ORANGE
 
 	}
 
