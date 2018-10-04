@@ -361,10 +361,10 @@ exclude) all endpoints, as shown in the following example:
 [source,yaml,indent=0]
 ----
 	management:
-		endpoints:
-			web:
-				exposure:
-					include: "*"
+	  endpoints:
+	    web:
+	      exposure:
+	        include: "*"
 ----
 ====
 
@@ -431,7 +431,7 @@ following example:
 		@Override
 		protected void configure(HttpSecurity http) throws Exception {
 			http.requestMatcher(EndpointRequest.toAnyEndpoint()).authorizeRequests()
-				.anyRequest().permitAll()
+				.anyRequest().permitAll();
 		}
 
 	}
@@ -470,25 +470,6 @@ moves from `/actuator` to the root of the management context. For example, if th
 management context path is `/management`, then the discovery page is available from
 `/management`. When the management context path is set to `/`, the discovery page is
 disabled to prevent the possibility of a clash with other mappings.
-
-
-
-[[production-ready-endpoints-custom-mapping]]
-=== Actuator Web Endpoint Paths
-By default, endpoints are exposed over HTTP under the `/actuator` path by using the ID of
-the endpoint. For example, the `beans` endpoint is exposed under `/actuator/beans`. If you
-want to map endpoints to a different path, you can use the
-`management.endpoints.web.path-mapping` property. Also, if you want change the base path,
-you can use `management.endpoints.web.base-path`.
-
-The following example remaps `/actuator/health` to `/healthcheck`:
-
-.application.properties
-[source,properties,indent=0]
-----
-	management.endpoints.web.base-path=/
-	management.endpoints.web.path-mapping.health=healthcheck
-----
 
 
 
@@ -544,6 +525,24 @@ JSON request body. When exposed via JMX, the parameters are mapped to the parame
 the MBean's operations. Parameters are required by default. They can be made optional
 by annotating them with `@org.springframework.lang.Nullable`.
 
+Each root property in the JSON request body can be mapped to a parameter of the endpoint.
+Consider the following JSON request body:
+
+[source,json,indent=0]
+----
+	{
+		"name": "test",
+		"counter": 42
+	}
+----
+
+This can be used to invoke a write operation that takes `String name` and `int counter`
+parameters.
+
+TIP: Because endpoints are technology agnostic, only simple types can be specified in the
+method signature. In particular declaring a single parameter with a custom type defining a
+`name` and `counter` properties is not supported.
+
 NOTE: To allow the input to be mapped to the operation method's parameters, Java code
 implementing an endpoint should be compiled with `-parameters`, and Kotlin code
 implementing an endpoint should be compiled with `-java-parameters`. This will happen
@@ -563,7 +562,7 @@ JMX or an HTTP request is converted to the required types using an instance of
 
 [[production-ready-endpoints-custom-web]]
 ==== Custom Web Endpoints
-Operations on an `@Endpoint`, `@WebEndpoint`, or `@WebEndpointExtension` are automatically
+Operations on an `@Endpoint`, `@WebEndpoint`, or `@EndpointWebExtension` are automatically
 exposed over HTTP using Jersey, Spring MVC, or Spring WebFlux.
 
 
@@ -674,7 +673,7 @@ authorization checks using its `isUserInRole(String)` method.
 ==== Servlet endpoints
 A `Servlet` can be exposed as an endpoint by implementing a class annotated with
 `@ServletEndpoint` that also implements `Supplier<EndpointServlet>`. Servlet endpoints
-provide deeper integration with the Servlet container but at the expose of portability.
+provide deeper integration with the Servlet container but at the expense of portability.
 They are intended to be used to expose an existing `Servlet` as an endpoint. For new
 endpoints, the `@Endpoint` and `@WebEndpoint` annotations should be preferred whenever
 possible.
@@ -921,6 +920,9 @@ appropriate:
 |===
 |Name |Description
 
+|{sc-spring-boot-actuator}/cassandra/CassandraReactiveHealthIndicator.{sc-ext}[`CassandraReactiveHealthIndicator`]
+|Checks that a Cassandra database is up.
+
 |{sc-spring-boot-actuator}/mongo/MongoReactiveHealthIndicator.{sc-ext}[`MongoReactiveHealthIndicator`]
 |Checks that a Mongo database is up.
 
@@ -1064,14 +1066,12 @@ additional entry:
 ----
 
 
-
 [[production-ready-monitoring]]
 == Monitoring and Management over HTTP
 If you are developing a web application, Spring Boot Actuator auto-configures all
 enabled endpoints to be exposed over HTTP. The default convention is to use the `id` of
 the endpoint with a prefix of `/actuator` as the URL path. For example, `health` is
 exposed as `/actuator/health`.
-
 TIP: Actuator is supported natively with Spring MVC, Spring WebFlux, and Jersey.
 
 
@@ -1097,6 +1097,18 @@ different HTTP port>>, `management.endpoints.web.base-path` is relative to
 `server.servlet.context-path`. If `management.server.port` is configured,
 `management.endpoints.web.base-path` is relative to
 `management.server.servlet.context-path`.
+
+If you want to map endpoints to a different path, you can use the
+`management.endpoints.web.path-mapping` property.
+
+The following example remaps `/actuator/health` to `/healthcheck`:
+
+.application.properties
+[source,properties,indent=0]
+----
+	management.endpoints.web.base-path=/
+	management.endpoints.web.path-mapping.health=healthcheck
+----
 
 
 
@@ -1181,6 +1193,14 @@ If you do not want to expose endpoints over HTTP, you can set the management por
 	management.server.port=-1
 ----
 
+This can be achieved using the `management.endpoints.web.exposure.exclude` property as well, as shown in
+following example:
+
+[source,properties,indent=0]
+----
+	management.endpoints.web.exposure.exclude=*
+----
+
 
 
 [[production-ready-jmx]]
@@ -1197,17 +1217,16 @@ The name of the MBean is usually generated from the `id` of the endpoint. For ex
 `health` endpoint is exposed as `org.springframework.boot:type=Endpoint,name=Health`.
 
 If your application contains more than one Spring `ApplicationContext`, you may find that
-names clash. To solve this problem, you can set the
-`management.endpoints.jmx.unique-names` property to `true` so that MBean names are always
-unique.
+names clash. To solve this problem, you can set the `spring.jmx.unique-names` property to
+`true` so that MBean names are always unique.
 
 You can also customize the JMX domain under which endpoints are exposed. The following
 settings show an example of doing so in `application.properties`:
 
 [source,properties,indent=0]
 ----
+	spring.jmx.unique-names=true
 	management.endpoints.jmx.domain=com.example.myapp
-	management.endpoints.jmx.unique-names=true
 ----
 
 
@@ -1236,7 +1255,7 @@ Maven, you would add the following dependency:
 	<dependency>
 		<groupId>org.jolokia</groupId>
 		<artifactId>jolokia-core</artifactId>
- 	</dependency>
+	</dependency>
 ----
 
 The Jolokia endpoint can then be exposed by adding `jolokia` or `*` to the
@@ -1317,6 +1336,8 @@ monitoring systems, including:
 
 - <<production-ready-metrics-export-atlas,Atlas>>
 - <<production-ready-metrics-export-datadog,Datadog>>
+- <<production-ready-metrics-export-dynatrace,Dynatrace>>
+- <<production-ready-metrics-export-dynatrace,Elastic>>
 - <<production-ready-metrics-export-ganglia,Ganglia>>
 - <<production-ready-metrics-export-graphite,Graphite>>
 - <<production-ready-metrics-export-influx,Influx>>
@@ -1433,6 +1454,41 @@ You can also change the interval at which metrics are sent to Datadog:
 
 
 
+[[production-ready-metrics-export-dynatrace]]
+==== Dynatrace
+Dynatrace registry pushes metrics to the configured URI periodically. To export metrics to
+{micrometer-registry-documentation}/dynatrace[Dynatrace], your API token, device ID, and
+URI must be provided:
+
+[source,properties,indent=0]
+----
+	management.metrics.export.dynatrace.api-token=YOUR_TOKEN
+	management.metrics.export.dynatrace.device-id=YOUR_DEVICE_ID
+	management.metrics.export.dynatrace.uri=YOUR_URI
+----
+
+You can also change the interval at which metrics are sent to Dynatrace:
+
+[source,properties,indent=0]
+----
+	management.metrics.export.dynatrace.step=30s
+----
+
+
+
+[[production-ready-metrics-export-elastic]]
+==== Elastic
+By default, metrics are exported to {micrometer-registry-documentation}/elastic[Elastic]
+running on your local machine. The location of the Elastic server to use can be provided
+using the following property:
+
+[source,properties,indent=0]
+----
+	management.metrics.export.elastic.hosts=http://elastic.example.com:8086
+----
+
+
+
 [[production-ready-metrics-export-ganglia]]
 ==== Ganglia
 By default, metrics are exported to {micrometer-registry-documentation}/ganglia[Ganglia]
@@ -1494,10 +1550,17 @@ server] to use can be provided using:
 ==== JMX
 Micrometer provides a hierarchical mapping to
 {micrometer-registry-documentation}/jmx[JMX], primarily as a cheap and portable way to
-view metrics locally. Micrometer provides a default `HierarchicalNameMapper` that governs
-how a dimensional meter id is
-{micrometer-registry-documentation}/jmx#_hierarchical_name_mapping[mapped to flat
-hierarchical names].
+view metrics locally. By default, metrics are exported to the `metrics` JMX domain. The
+domain to use can be provided using:
+
+[source,properties,indent=0]
+----
+	management.metrics.export.jmx.domain=com.example.app.metrics
+----
+
+Micrometer provides a default `HierarchicalNameMapper` that governs how a dimensional
+meter id is {micrometer-registry-documentation}/jmx#_hierarchical_name_mapping[mapped to
+flat hierarchical names].
 
 TIP: To take control over this behaviour, define your `JmxMeterRegistry` and supply your
 own `HierarchicalNameMapper`. An auto-configured `JmxConfig` and `Clock` beans are
@@ -1658,6 +1721,8 @@ Spring Boot registers the following core metrics when applicable:
 ** Number of classes loaded/unloaded
 * CPU metrics
 * File descriptor metrics
+* Kafka consumer metrics
+* Log4j2 metrics: record the number of events logged to Log4j2 at each level
 * Logback metrics: record the number of events logged to Logback at each level
 * Uptime metrics: report a gauge for uptime and a fixed gauge representing the
 application's absolute start time
@@ -1697,12 +1762,28 @@ customized by setting the `management.metrics.web.server.requests-metric-name` p
 
 By default, Spring MVC-related metrics are tagged with the following information:
 
-* `method`, the request's method (for example, `GET` or `POST`).
-* `uri`,  the request's URI template prior to variable substitution, if possible (for
-example, `/api/person/{id}`).
-* `status`, the response's HTTP status code (for example, `200` or `500`).
-* `exception`, the simple class name of any exception that was thrown while handling the
-request.
+|===
+|Tag |Description
+
+|`exception`
+|Simple class name of any exception that was thrown while handling the request.
+
+|`method`
+|Request's method (for example, `GET` or `POST`)
+
+|`outcome`
+|Request's outcome based on the status code of the response. 1xx is
+`INFORMATIONAL`, 2xx is `SUCCESS`, 3xx is `REDIRECTION`, 4xx `CLIENT_ERROR`, and 5xx is
+`SERVER_ERROR`
+
+|`status`
+|Response's HTTP status code (for example, `200` or `500`)
+
+|`uri`
+|Request's URI template prior to variable substitution, if possible (for example,
+`/api/person/{id}`)
+
+|===
 
 To customize the tags, provide a `@Bean` that implements `WebMvcTagsProvider`.
 
@@ -1718,12 +1799,28 @@ the name by setting the `management.metrics.web.server.requests-metric-name` pro
 
 By default, WebFlux-related metrics are tagged with the following information:
 
-* `method`, the request's method (for example, `GET` or `POST`).
-* `uri`,  the request's URI template prior to variable substitution, if possible (for
-example, `/api/person/{id}`).
-* `status`, the response's HTTP status code (for example, `200` or `500`).
-* `exception`, the simple class name of any exception that was thrown while handling the
-request.
+|===
+|Tag |Description
+
+|`exception`
+|Simple class name of any exception that was thrown while handling the request.
+
+|`method`
+|Request's method (for example, `GET` or `POST`)
+
+|`outcome`
+|Request's outcome based on the status code of the response. 1xx is
+`INFORMATIONAL`, 2xx is `SUCCESS`, 3xx is `REDIRECTION`, 4xx `CLIENT_ERROR`, and 5xx is
+`SERVER_ERROR`
+
+|`status`
+|Response's HTTP status code (for example, `200` or `500`)
+
+|`uri`
+|Request's URI template prior to variable substitution, if possible (for example,
+`/api/person/{id}`)
+
+|===
 
 To customize the tags, provide a `@Bean` that implements `WebFluxTagsProvider`.
 
@@ -1809,7 +1906,7 @@ Auto-configuration enables the instrumentation of all available Hibernate
 Metrics are also tagged by the name of the `EntityManagerFactory` that is derived from
 the bean name.
 
-To enable statistics, the standardJPA property `hibernate.generate_statistics` must be
+To enable statistics, the standard JPA property `hibernate.generate_statistics` must be
 set to `true`. You can enable that on the auto-configured `EntityManagerFactory` as shown
 in the following example:
 
@@ -1860,8 +1957,8 @@ include::{code-examples}/actuate/metrics/MetricsFilterBeanExample.java[tag=confi
 
 [[production-ready-metrics-common-tags]]
 ==== Common tags
-Common tag are generally used for dimensional drill-down on the operating environment like
-host, instance, region, stack, etc. Commons tags applied to all meters and can be
+Common tags are generally used for dimensional drill-down on the operating environment like
+host, instance, region, stack, etc. Commons tags are applied to all meters and can be
 configured as shown in the following example:
 
 [source,properties,indent=0]
@@ -1870,7 +1967,7 @@ configured as shown in the following example:
 	management.metrics.tags.stack=prod
 ----
 
-The example above adds a `region` and `stack` tags to all meters with a value of
+The example above adds `region` and `stack` tags to all meters with a value of
 `us-east-1` and `prod` respectively.
 
 NOTE: The order of common tags is important if you are using Graphite. As the order of
@@ -1979,7 +2076,8 @@ endpoint and obtain basic information about the last 100 request-response exchan
 [[production-ready-http-tracing-custom]]
 === Custom HTTP tracing
 To customize the items that are included in each trace, use the
-`management.trace.http.include` configuration property.
+`management.trace.http.include` configuration property. For advanced customization,
+consider registering your own `HttpExchangeTracer` implementation.
 
 By default, an `InMemoryHttpTraceRepository` that stores traces for the last 100
 request-response exchanges is used. If you need to expand the capacity, you can define
@@ -2074,7 +2172,7 @@ services use self-signed certificates, you need to set the following property:
 
 === Custom context path
 
-If the server's context-path has been configured to anything other then `/`, the Cloud
+If the server's context-path has been configured to anything other than `/`, the Cloud
 Foundry endpoints will not be available at the root of the application. For example, if
 `server.servlet.context-path=/app`, Cloud Foundry endpoints will be available at
 `/app/cloudfoundryapplication/*`.

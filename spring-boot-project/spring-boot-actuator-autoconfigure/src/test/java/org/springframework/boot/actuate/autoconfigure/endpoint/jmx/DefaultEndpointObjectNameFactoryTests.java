@@ -29,6 +29,7 @@ import org.springframework.mock.env.MockEnvironment;
 import org.springframework.util.ObjectUtils;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatIllegalArgumentException;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.mock;
 
@@ -72,12 +73,34 @@ public class DefaultEndpointObjectNameFactoryTests {
 
 	@Test
 	public void generateObjectNameWithUniqueNames() {
+		this.environment.setProperty("spring.jmx.unique-names", "true");
+		assertUniqueObjectName();
+	}
+
+	@Test
+	@Deprecated
+	public void generateObjectNameWithUniqueNamesDeprecatedProperty() {
 		this.properties.setUniqueNames(true);
+		assertUniqueObjectName();
+	}
+
+	private void assertUniqueObjectName() {
 		ExposableJmxEndpoint endpoint = endpoint("test");
 		String id = ObjectUtils.getIdentityHexString(endpoint);
 		ObjectName objectName = generateObjectName(endpoint);
 		assertThat(objectName.toString()).isEqualTo(
 				"org.springframework.boot:type=Endpoint,name=Test,identity=" + id);
+	}
+
+	@Test
+	@Deprecated
+	public void generateObjectNameWithUniqueNamesDeprecatedPropertyMismatchMainProperty() {
+		this.environment.setProperty("spring.jmx.unique-names", "false");
+		this.properties.setUniqueNames(true);
+		assertThatIllegalArgumentException()
+				.isThrownBy(() -> generateObjectName(endpoint("test")))
+				.withMessageContaining("spring.jmx.unique-names")
+				.withMessageContaining("management.endpoints.jmx.unique-names");
 	}
 
 	@Test
@@ -107,8 +130,8 @@ public class DefaultEndpointObjectNameFactoryTests {
 
 	private ObjectName generateObjectName(ExposableJmxEndpoint endpoint) {
 		try {
-			return new DefaultEndpointObjectNameFactory(this.properties, this.mBeanServer,
-					this.contextId).getObjectName(endpoint);
+			return new DefaultEndpointObjectNameFactory(this.properties, this.environment,
+					this.mBeanServer, this.contextId).getObjectName(endpoint);
 		}
 		catch (MalformedObjectNameException ex) {
 			throw new AssertionError("Invalid object name", ex);

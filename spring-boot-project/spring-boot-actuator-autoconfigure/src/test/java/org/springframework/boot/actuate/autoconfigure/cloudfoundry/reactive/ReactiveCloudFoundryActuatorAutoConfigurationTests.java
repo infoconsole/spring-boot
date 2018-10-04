@@ -24,10 +24,8 @@ import java.util.stream.Collectors;
 import javax.net.ssl.SSLException;
 
 import org.junit.After;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.ExpectedException;
-import reactor.ipc.netty.http.HttpResources;
+import reactor.netty.http.HttpResources;
 
 import org.springframework.boot.actuate.autoconfigure.endpoint.EndpointAutoConfiguration;
 import org.springframework.boot.actuate.autoconfigure.endpoint.web.WebEndpointAutoConfiguration;
@@ -65,7 +63,7 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.reactive.function.client.WebClient;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.hamcrest.Matchers.instanceOf;
+import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.mockito.Mockito.mock;
 
 /**
@@ -74,9 +72,6 @@ import static org.mockito.Mockito.mock;
  * @author Madhura Bhave
  */
 public class ReactiveCloudFoundryActuatorAutoConfigurationTests {
-
-	@Rule
-	public ExpectedException thrown = ExpectedException.none();
 
 	private final ReactiveWebApplicationContextRunner contextRunner = new ReactiveWebApplicationContextRunner()
 			.withConfiguration(AutoConfigurations.of(
@@ -284,8 +279,9 @@ public class ReactiveCloudFoundryActuatorAutoConfigurationTests {
 					Collection<ExposableWebEndpoint> endpoints = getHandlerMapping(
 							context).getEndpoints();
 					ExposableWebEndpoint endpoint = endpoints.iterator().next();
-					WebOperation webOperation = endpoint.getOperations().iterator()
-							.next();
+					assertThat(endpoint.getOperations()).hasSize(3);
+					WebOperation webOperation = findOperationWithRequestPath(endpoint,
+							"health");
 					Object invoker = ReflectionTestUtils.getField(webOperation,
 							"invoker");
 					assertThat(ReflectionTestUtils.getField(invoker, "target"))
@@ -334,9 +330,11 @@ public class ReactiveCloudFoundryActuatorAutoConfigurationTests {
 							.getField(interceptor, "cloudFoundrySecurityService");
 					WebClient webClient = (WebClient) ReflectionTestUtils
 							.getField(interceptorSecurityService, "webClient");
-					this.thrown.expectCause(instanceOf(SSLException.class));
-					webClient.get().uri("https://self-signed.badssl.com/").exchange()
-							.block();
+					assertThatExceptionOfType(RuntimeException.class)
+							.isThrownBy(
+									webClient.get().uri("https://self-signed.badssl.com/")
+											.exchange()::block)
+							.withCauseInstanceOf(SSLException.class);
 				});
 	}
 
@@ -344,6 +342,17 @@ public class ReactiveCloudFoundryActuatorAutoConfigurationTests {
 			ApplicationContext context) {
 		return context.getBean("cloudFoundryWebFluxEndpointHandlerMapping",
 				CloudFoundryWebFluxEndpointHandlerMapping.class);
+	}
+
+	private WebOperation findOperationWithRequestPath(ExposableWebEndpoint endpoint,
+			String requestPath) {
+		for (WebOperation operation : endpoint.getOperations()) {
+			if (operation.getRequestPredicate().getPath().equals(requestPath)) {
+				return operation;
+			}
+		}
+		throw new IllegalStateException("No operation found with request path "
+				+ requestPath + " from " + endpoint.getOperations());
 	}
 
 	@Configuration

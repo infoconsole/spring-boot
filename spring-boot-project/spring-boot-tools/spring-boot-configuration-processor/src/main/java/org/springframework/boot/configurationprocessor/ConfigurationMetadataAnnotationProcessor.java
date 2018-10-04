@@ -302,7 +302,7 @@ public class ConfigurationMetadataAnnotationProcessor extends AbstractProcessor 
 						|| isDeprecated(source);
 				this.metadataCollector.add(ItemMetadata.newProperty(prefix, name,
 						dataType, sourceType, null, description, defaultValue,
-						(deprecated ? getItemDeprecation(getter) : null)));
+						deprecated ? getItemDeprecation(getter) : null));
 			}
 		});
 	}
@@ -317,8 +317,9 @@ public class ConfigurationMetadataAnnotationProcessor extends AbstractProcessor 
 			reason = (String) elementValues.get("reason");
 			replacement = (String) elementValues.get("replacement");
 		}
-		return new ItemDeprecation(("".equals(reason) ? null : reason),
-				("".equals(replacement) ? null : replacement));
+		reason = "".equals(reason) ? null : reason;
+		replacement = "".equals(replacement) ? null : replacement;
+		return new ItemDeprecation(reason, replacement);
 	}
 
 	private void processSimpleLombokTypes(String prefix, TypeElement element,
@@ -343,7 +344,7 @@ public class ConfigurationMetadataAnnotationProcessor extends AbstractProcessor 
 				boolean deprecated = isDeprecated(field) || isDeprecated(source);
 				this.metadataCollector.add(ItemMetadata.newProperty(prefix, name,
 						dataType, sourceType, null, description, defaultValue,
-						(deprecated ? new ItemDeprecation() : null)));
+						deprecated ? new ItemDeprecation() : null));
 			}
 		});
 	}
@@ -384,7 +385,7 @@ public class ConfigurationMetadataAnnotationProcessor extends AbstractProcessor 
 	 * @param element the parent element of the field (i.e. its holding class)
 	 * @param getter {@code true} to look for the read accessor, {@code false} for the
 	 * write accessor
-	 * @return {@code true} if this field is a public accessor of the specified type
+	 * @return {@code true} if this field has a public accessor of the specified type
 	 */
 	private boolean hasLombokPublicAccessor(VariableElement field, TypeElement element,
 			boolean getter) {
@@ -401,7 +402,6 @@ public class ConfigurationMetadataAnnotationProcessor extends AbstractProcessor 
 		}
 		return hasAnnotation(element, LOMBOK_DATA_ANNOTATION);
 	}
-
 
 	private boolean isAccessLevelPublic(AnnotationMirror lombokAnnotation) {
 		Map<String, Object> values = getAnnotationElementValues(lombokAnnotation);
@@ -421,7 +421,7 @@ public class ConfigurationMetadataAnnotationProcessor extends AbstractProcessor 
 			this.metadataCollector.add(ItemMetadata.newGroup(nestedPrefix,
 					this.typeUtils.getQualifiedName(returnElement),
 					this.typeUtils.getQualifiedName(element),
-					(getter != null ? getter.toString() : null)));
+					(getter != null) ? getter.toString() : null));
 			processTypeElement(nestedPrefix, (TypeElement) returnElement, source);
 		}
 	}
@@ -454,7 +454,7 @@ public class ConfigurationMetadataAnnotationProcessor extends AbstractProcessor 
 		this.metadataCollector.add(ItemMetadata.newProperty(endpointKey, "enabled",
 				Boolean.class.getName(), type, null,
 				String.format("Whether to enable the %s endpoint.", endpointId),
-				(enabledByDefault != null ? enabledByDefault : true), null));
+				(enabledByDefault != null) ? enabledByDefault : true, null));
 		if (hasMainReadOperation(element)) {
 			this.metadataCollector.add(ItemMetadata.newProperty(endpointKey,
 					"cache.time-to-live", Duration.class.getName(), type, null,

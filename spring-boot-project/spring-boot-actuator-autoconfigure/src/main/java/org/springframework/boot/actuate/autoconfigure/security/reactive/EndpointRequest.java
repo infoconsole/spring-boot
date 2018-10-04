@@ -125,7 +125,7 @@ public final class EndpointRequest {
 
 		private final boolean includeLinks;
 
-		private ServerWebExchangeMatcher delegate;
+		private volatile ServerWebExchangeMatcher delegate;
 
 		private EndpointServerWebExchangeMatcher(boolean includeLinks) {
 			this(Collections.emptyList(), Collections.emptyList(), includeLinks);
@@ -219,7 +219,8 @@ public final class EndpointRequest {
 		}
 
 		private String getEndpointId(Class<?> source) {
-			Endpoint annotation = AnnotatedElementUtils.getMergedAnnotation(source, Endpoint.class);
+			Endpoint annotation = AnnotatedElementUtils.getMergedAnnotation(source,
+					Endpoint.class);
 			Assert.state(annotation != null,
 					() -> "Class " + source + " is not annotated with @Endpoint");
 			return annotation.id();
@@ -245,7 +246,7 @@ public final class EndpointRequest {
 	public static final class LinksServerWebExchangeMatcher
 			extends ApplicationContextServerWebExchangeMatcher<WebEndpointProperties> {
 
-		private ServerWebExchangeMatcher delegate;
+		private volatile ServerWebExchangeMatcher delegate;
 
 		private LinksServerWebExchangeMatcher() {
 			super(WebEndpointProperties.class);

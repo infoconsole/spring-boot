@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2017 the original author or authors.
+ * Copyright 2012-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,13 +24,14 @@ import lombok.Setter;
 import org.springframework.boot.configurationsample.ConfigurationProperties;
 
 /**
- * Configuration properties using lombok @Data on element level and overwriting behaviour
- * with @Getter und @Setter at field level.
+ * Configuration properties using Lombok @Data on element level and overwriting behaviour
+ * with @Getter and @Setter at field level.
  *
  * @author Jonas Keßler
  */
 @Data
 @ConfigurationProperties(prefix = "accesslevel.overwrite.data")
+@SuppressWarnings("unused")
 public class LombokAccessLevelOverwriteDataProperties {
 
 	private String name0;

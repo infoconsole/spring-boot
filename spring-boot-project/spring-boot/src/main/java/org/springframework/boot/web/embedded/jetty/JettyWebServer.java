@@ -107,7 +107,7 @@ public class JettyWebServer implements WebServer {
 				this.server.start();
 				this.server.setStopAtShutdown(false);
 			}
-			catch (Exception ex) {
+			catch (Throwable ex) {
 				// Ensure process isn't left running
 				stopSilently();
 				throw new WebServerException("Unable to start embedded Jetty web server",
@@ -172,8 +172,10 @@ public class JettyWebServer implements WebServer {
 	private String getActualPortsDescription() {
 		StringBuilder ports = new StringBuilder();
 		for (Connector connector : this.server.getConnectors()) {
-			ports.append(ports.length() != 0 ? ", " : "");
-			ports.append(getLocalPort(connector) + getProtocols(connector));
+			if (ports.length() != 0) {
+				ports.append(", ");
+			}
+			ports.append(getLocalPort(connector)).append(getProtocols(connector));
 		}
 		return ports.toString();
 	}

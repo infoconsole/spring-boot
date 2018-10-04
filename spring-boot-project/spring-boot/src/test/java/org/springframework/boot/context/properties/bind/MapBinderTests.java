@@ -26,9 +26,7 @@ import java.util.Properties;
 import java.util.stream.Collectors;
 
 import org.junit.Before;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.ExpectedException;
 import org.mockito.Answers;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InOrder;
@@ -47,6 +45,7 @@ import org.springframework.test.context.support.TestPropertySourceUtils;
 import org.springframework.util.StringUtils;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.assertj.core.api.Assertions.entry;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -77,9 +76,6 @@ public class MapBinderTests {
 
 	private static final Bindable<Map<String, String[]>> STRING_ARRAY_MAP = Bindable
 			.mapOf(String.class, String[].class);
-
-	@Rule
-	public ExpectedException thrown = ExpectedException.none();
 
 	private List<ConfigurationPropertySource> sources = new ArrayList<>();
 
@@ -566,8 +562,8 @@ public class MapBinderTests {
 		MockConfigurationPropertySource source = new MockConfigurationPropertySource();
 		source.put("foo", "a,b");
 		this.sources.add(source);
-		this.thrown.expect(BindException.class);
-		this.binder.bind("foo", STRING_STRING_MAP);
+		assertThatExceptionOfType(BindException.class)
+				.isThrownBy(() -> this.binder.bind("foo", STRING_STRING_MAP));
 	}
 
 	@Test
@@ -613,6 +609,32 @@ public class MapBinderTests {
 		ExampleCustomWithDefaultConstructorBean result = this.binder
 				.bind("foo", ExampleCustomWithDefaultConstructorBean.class).get();
 		assertThat(result.getItems()).containsExactly(entry("a", "b"));
+	}
+
+	@Test
+	public void bindToImmutableMapShouldReturnPopulatedMap() {
+		MockConfigurationPropertySource source = new MockConfigurationPropertySource();
+		source.put("foo.values.c", "d");
+		source.put("foo.values.e", "f");
+		this.sources.add(source);
+		Map<String, String> result = this.binder
+				.bind("foo.values",
+						STRING_STRING_MAP
+								.withExistingValue(Collections.singletonMap("a", "b")))
+				.get();
+		assertThat(result).hasSize(3);
+		assertThat(result.entrySet()).containsExactly(entry("a", "b"), entry("c", "d"),
+				entry("e", "f"));
+	}
+
+	@Test
+	public void bindToBeanWithExceptionInGetterForExistingValue() {
+		MockConfigurationPropertySource source = new MockConfigurationPropertySource();
+		source.put("foo.values.a", "b");
+		this.sources.add(source);
+		BeanWithGetterException result = this.binder
+				.bind("foo", Bindable.of(BeanWithGetterException.class)).get();
+		assertThat(result.getValues()).containsExactly(entry("a", "b"));
 	}
 
 	private <K, V> Bindable<Map<K, V>> getMapBindable(Class<K> keyGeneric,
@@ -717,6 +739,20 @@ public class MapBinderTests {
 
 	public static class MyCustomWithDefaultConstructorMap
 			extends HashMap<String, String> {
+
+	}
+
+	public static class BeanWithGetterException {
+
+		private Map<String, String> values;
+
+		public void setValues(Map<String, String> values) {
+			this.values = values;
+		}
+
+		public Map<String, String> getValues() {
+			return Collections.unmodifiableMap(this.values);
+		}
 
 	}
 

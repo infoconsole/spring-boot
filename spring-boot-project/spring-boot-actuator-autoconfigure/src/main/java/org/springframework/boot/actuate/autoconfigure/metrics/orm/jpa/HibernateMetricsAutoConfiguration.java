@@ -41,6 +41,7 @@ import org.springframework.util.StringUtils;
  *
  * @author Rui Figueira
  * @author Stephane Nicoll
+ * @since 2.1.0
  */
 @Configuration
 @AutoConfigureAfter({ MetricsAutoConfiguration.class, HibernateJpaAutoConfiguration.class,
@@ -71,7 +72,7 @@ public class HibernateMetricsAutoConfiguration {
 	}
 
 	/**
-	 * Get the name of a {@link EntityManagerFactory} based on its {@code beanName}.
+	 * Get the name of an {@link EntityManagerFactory} based on its {@code beanName}.
 	 * @param beanName the name of the {@link EntityManagerFactory} bean
 	 * @return a name for the given entity manager factory
 	 */

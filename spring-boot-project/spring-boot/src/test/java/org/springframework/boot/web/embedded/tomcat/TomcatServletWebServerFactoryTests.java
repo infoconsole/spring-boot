@@ -61,9 +61,10 @@ import org.springframework.boot.web.servlet.server.AbstractServletWebServerFacto
 import org.springframework.test.util.ReflectionTestUtils;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
+import static org.assertj.core.api.Assertions.assertThatIllegalArgumentException;
 import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -121,9 +122,7 @@ public class TomcatServletWebServerFactoryTests
 	public void tomcatListeners() {
 		TomcatServletWebServerFactory factory = getFactory();
 		LifecycleListener[] listeners = new LifecycleListener[4];
-		for (int i = 0; i < listeners.length; i++) {
-			listeners[i] = mock(LifecycleListener.class);
-		}
+		Arrays.setAll(listeners, (i) -> mock(LifecycleListener.class));
 		factory.setContextLifecycleListeners(Arrays.asList(listeners[0], listeners[1]));
 		factory.addContextLifecycleListeners(listeners[2], listeners[3]);
 		this.webServer = factory.getWebServer();
@@ -137,9 +136,7 @@ public class TomcatServletWebServerFactoryTests
 	public void tomcatCustomizers() {
 		TomcatServletWebServerFactory factory = getFactory();
 		TomcatContextCustomizer[] listeners = new TomcatContextCustomizer[4];
-		for (int i = 0; i < listeners.length; i++) {
-			listeners[i] = mock(TomcatContextCustomizer.class);
-		}
+		Arrays.setAll(listeners, (i) -> mock(TomcatContextCustomizer.class));
 		factory.setTomcatContextCustomizers(Arrays.asList(listeners[0], listeners[1]));
 		factory.addContextCustomizers(listeners[2], listeners[3]);
 		this.webServer = factory.getWebServer();
@@ -164,9 +161,7 @@ public class TomcatServletWebServerFactoryTests
 	public void tomcatConnectorCustomizers() {
 		TomcatServletWebServerFactory factory = getFactory();
 		TomcatConnectorCustomizer[] listeners = new TomcatConnectorCustomizer[4];
-		for (int i = 0; i < listeners.length; i++) {
-			listeners[i] = mock(TomcatConnectorCustomizer.class);
-		}
+		Arrays.setAll(listeners, (i) -> mock(TomcatConnectorCustomizer.class));
 		factory.setTomcatConnectorCustomizers(Arrays.asList(listeners[0], listeners[1]));
 		factory.addConnectorCustomizers(listeners[2], listeners[3]);
 		this.webServer = factory.getWebServer();
@@ -180,11 +175,7 @@ public class TomcatServletWebServerFactoryTests
 	public void tomcatAdditionalConnectors() {
 		TomcatServletWebServerFactory factory = getFactory();
 		Connector[] listeners = new Connector[4];
-		for (int i = 0; i < listeners.length; i++) {
-			Connector connector = mock(Connector.class);
-			given(connector.getState()).willReturn(LifecycleState.STOPPED);
-			listeners[i] = connector;
-		}
+		Arrays.setAll(listeners, (i) -> new Connector());
 		factory.addAdditionalTomcatConnectors(listeners);
 		this.webServer = factory.getWebServer();
 		Map<Service, Connector[]> connectors = ((TomcatWebServer) this.webServer)
@@ -196,9 +187,10 @@ public class TomcatServletWebServerFactoryTests
 	@Test
 	public void addNullAdditionalConnectorThrows() {
 		TomcatServletWebServerFactory factory = getFactory();
-		this.thrown.expect(IllegalArgumentException.class);
-		this.thrown.expectMessage("Connectors must not be null");
-		factory.addAdditionalTomcatConnectors((Connector[]) null);
+		assertThatIllegalArgumentException()
+				.isThrownBy(
+						() -> factory.addAdditionalTomcatConnectors((Connector[]) null))
+				.withMessageContaining("Connectors must not be null");
 	}
 
 	@Test
@@ -234,33 +226,33 @@ public class TomcatServletWebServerFactoryTests
 	@Test
 	public void setNullTomcatContextCustomizersThrows() {
 		TomcatServletWebServerFactory factory = getFactory();
-		this.thrown.expect(IllegalArgumentException.class);
-		this.thrown.expectMessage("TomcatContextCustomizers must not be null");
-		factory.setTomcatContextCustomizers(null);
+		assertThatIllegalArgumentException()
+				.isThrownBy(() -> factory.setTomcatContextCustomizers(null))
+				.withMessageContaining("TomcatContextCustomizers must not be null");
 	}
 
 	@Test
 	public void addNullContextCustomizersThrows() {
 		TomcatServletWebServerFactory factory = getFactory();
-		this.thrown.expect(IllegalArgumentException.class);
-		this.thrown.expectMessage("TomcatContextCustomizers must not be null");
-		factory.addContextCustomizers((TomcatContextCustomizer[]) null);
+		assertThatIllegalArgumentException().isThrownBy(
+				() -> factory.addContextCustomizers((TomcatContextCustomizer[]) null))
+				.withMessageContaining("TomcatContextCustomizers must not be null");
 	}
 
 	@Test
 	public void setNullTomcatConnectorCustomizersThrows() {
 		TomcatServletWebServerFactory factory = getFactory();
-		this.thrown.expect(IllegalArgumentException.class);
-		this.thrown.expectMessage("TomcatConnectorCustomizers must not be null");
-		factory.setTomcatConnectorCustomizers(null);
+		assertThatIllegalArgumentException()
+				.isThrownBy(() -> factory.setTomcatConnectorCustomizers(null))
+				.withMessageContaining("TomcatConnectorCustomizers must not be null");
 	}
 
 	@Test
 	public void addNullConnectorCustomizersThrows() {
 		TomcatServletWebServerFactory factory = getFactory();
-		this.thrown.expect(IllegalArgumentException.class);
-		this.thrown.expectMessage("TomcatConnectorCustomizers must not be null");
-		factory.addConnectorCustomizers((TomcatConnectorCustomizer[]) null);
+		assertThatIllegalArgumentException().isThrownBy(
+				() -> factory.addConnectorCustomizers((TomcatConnectorCustomizer[]) null))
+				.withMessageContaining("TomcatConnectorCustomizers must not be null");
 	}
 
 	@Test
@@ -373,12 +365,12 @@ public class TomcatServletWebServerFactoryTests
 		// and avoid a leak
 		this.webServer.start();
 		// Lookups should no longer be possible
-		this.thrown.expect(NamingException.class);
-		new InitialContext().lookup("java:comp/env");
+		assertThatExceptionOfType(NamingException.class)
+				.isThrownBy(() -> new InitialContext().lookup("java:comp/env"));
 	}
 
 	@Test
-	public void defaultLocaleCharsetMappingsAreOverriden() {
+	public void defaultLocaleCharsetMappingsAreOverridden() {
 		TomcatServletWebServerFactory factory = getFactory();
 		this.webServer = factory.getWebServer();
 		// override defaults, see org.apache.catalina.util.CharsetMapperDefault.properties
@@ -420,6 +412,17 @@ public class TomcatServletWebServerFactoryTests
 		assertThat(tldSkipSet).contains("foo.jar", "bar.jar");
 	}
 
+	@Test
+	public void customTomcatHttpOnlyCookie() {
+		TomcatServletWebServerFactory factory = getFactory();
+		factory.getSession().getCookie().setHttpOnly(false);
+		this.webServer = factory.getWebServer();
+		this.webServer.start();
+		Tomcat tomcat = ((TomcatWebServer) this.webServer).getTomcat();
+		Context context = (Context) tomcat.getHost().findChildren()[0];
+		assertThat(context.getUseHttpOnly()).isFalse();
+	}
+
 	@Override
 	protected JspServlet getJspServlet() throws ServletException {
 		Tomcat tomcat = ((TomcatWebServer) this.webServer).getTomcat();
@@ -447,7 +450,7 @@ public class TomcatServletWebServerFactoryTests
 				.getHost().findChildren()[0];
 		CharsetMapper mapper = ((TomcatEmbeddedContext) context).getCharsetMapper();
 		String charsetName = mapper.getCharset(locale);
-		return (charsetName != null ? Charset.forName(charsetName) : null);
+		return (charsetName != null) ? Charset.forName(charsetName) : null;
 	}
 
 	private void assertTimeout(TomcatServletWebServerFactory factory, int expected) {

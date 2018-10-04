@@ -22,11 +22,12 @@ import java.io.IOException;
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
+import java.util.stream.Collectors;
 
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.ExpectedException;
 import org.junit.rules.TemporaryFolder;
 
 import org.springframework.boot.configurationprocessor.json.JSONArray;
@@ -64,6 +65,7 @@ import org.springframework.boot.configurationsample.method.MethodAndClassConfig;
 import org.springframework.boot.configurationsample.method.SimpleMethodConfig;
 import org.springframework.boot.configurationsample.simple.ClassWithNestedProperties;
 import org.springframework.boot.configurationsample.simple.DeprecatedSingleProperty;
+import org.springframework.boot.configurationsample.simple.DescriptionProperties;
 import org.springframework.boot.configurationsample.simple.HierarchicalProperties;
 import org.springframework.boot.configurationsample.simple.NotAnnotated;
 import org.springframework.boot.configurationsample.simple.SimpleArrayProperties;
@@ -92,6 +94,7 @@ import org.springframework.boot.testsupport.compiler.TestCompiler;
 import org.springframework.util.FileCopyUtils;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatIllegalStateException;
 
 /**
  * Tests for {@link ConfigurationMetadataAnnotationProcessor}.
@@ -106,9 +109,6 @@ public class ConfigurationMetadataAnnotationProcessorTests {
 
 	@Rule
 	public TemporaryFolder temporaryFolder = new TemporaryFolder();
-
-	@Rule
-	public ExpectedException thrown = ExpectedException.none();
 
 	private TestCompiler compiler;
 
@@ -208,6 +208,20 @@ public class ConfigurationMetadataAnnotationProcessorTests {
 						.fromSource(HierarchicalProperties.class));
 		assertThat(metadata).has(Metadata.withProperty("hierarchical.third", String.class)
 				.fromSource(HierarchicalProperties.class));
+	}
+
+	@Test
+	public void descriptionProperties() {
+		ConfigurationMetadata metadata = compile(DescriptionProperties.class);
+		assertThat(metadata).has(Metadata.withGroup("description")
+				.fromSource(DescriptionProperties.class));
+		assertThat(metadata).has(Metadata.withProperty("description.simple", String.class)
+				.fromSource(DescriptionProperties.class)
+				.withDescription("A simple description."));
+		assertThat(metadata).has(Metadata
+				.withProperty("description.multi-line", String.class)
+				.fromSource(DescriptionProperties.class).withDescription(
+						"This is a lengthy description that spans across multiple lines to showcase that the line separators are cleaned automatically."));
 	}
 
 	@Test
@@ -485,9 +499,9 @@ public class ConfigurationMetadataAnnotationProcessorTests {
 
 	@Test
 	public void invalidDoubleRegistration() {
-		this.thrown.expect(IllegalStateException.class);
-		this.thrown.expectMessage("Compilation failed");
-		compile(InvalidDoubleRegistrationProperties.class);
+		assertThatIllegalStateException()
+				.isThrownBy(() -> compile(InvalidDoubleRegistrationProperties.class))
+				.withMessageContaining("Compilation failed");
 	}
 
 	@Test
@@ -807,9 +821,26 @@ public class ConfigurationMetadataAnnotationProcessorTests {
 		ConfigurationMetadata metadata = compile(SimpleProperties.class,
 				SimpleConflictingProperties.class);
 		assertThat(metadata.getItems()).hasSize(6);
-		assertThat(metadata).has(Metadata.withProperty("simple.flag", Boolean.class)
-				.fromSource(SimpleProperties.class).withDescription("A simple flag.")
-				.withDeprecation(null, null).withDefaultValue(true));
+		List<ItemMetadata> items = metadata.getItems().stream()
+				.filter((item) -> item.getName().equals("simple.flag"))
+				.collect(Collectors.toList());
+		assertThat(items).hasSize(2);
+		ItemMetadata matchingProperty = items.stream()
+				.filter((item) -> item.getType().equals(Boolean.class.getName()))
+				.findFirst().orElse(null);
+		assertThat(matchingProperty).isNotNull();
+		assertThat(matchingProperty.getDefaultValue()).isEqualTo(true);
+		assertThat(matchingProperty.getSourceType())
+				.isEqualTo(SimpleProperties.class.getName());
+		assertThat(matchingProperty.getDescription()).isEqualTo("A simple flag.");
+		ItemMetadata nonMatchingProperty = items.stream()
+				.filter((item) -> item.getType().equals(String.class.getName()))
+				.findFirst().orElse(null);
+		assertThat(nonMatchingProperty).isNotNull();
+		assertThat(nonMatchingProperty.getDefaultValue()).isEqualTo("hello");
+		assertThat(nonMatchingProperty.getSourceType())
+				.isEqualTo(SimpleConflictingProperties.class.getName());
+		assertThat(nonMatchingProperty.getDescription()).isNull();
 	}
 
 	@Test
@@ -870,10 +901,9 @@ public class ConfigurationMetadataAnnotationProcessorTests {
 	public void mergeOfInvalidAdditionalMetadata() throws IOException {
 		File additionalMetadataFile = createAdditionalMetadataFile();
 		FileCopyUtils.copy("Hello World", new FileWriter(additionalMetadataFile));
-
-		this.thrown.expect(IllegalStateException.class);
-		this.thrown.expectMessage("Compilation failed");
-		compile(SimpleProperties.class);
+		assertThatIllegalStateException()
+				.isThrownBy(() -> compile(SimpleProperties.class))
+				.withMessage("Compilation failed");
 	}
 
 	@Test

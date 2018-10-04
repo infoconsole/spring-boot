@@ -145,10 +145,11 @@ public class ConfigurationMetadata {
 	}
 
 	private ItemMetadata findMatchingItemMetadata(ItemMetadata metadata) {
-		List<ItemMetadata> candidates = getCandidates(metadata.getName());
-		if (candidates.isEmpty()) {
+		List<ItemMetadata> candidates = this.items.get(metadata.getName());
+		if (candidates == null || candidates.isEmpty()) {
 			return null;
 		}
+		candidates = new ArrayList<>(candidates);
 		candidates.removeIf((itemMetadata) -> !itemMetadata.hasSameType(metadata));
 		if (candidates.size() > 1 && metadata.getType() != null) {
 			candidates.removeIf(
@@ -165,11 +166,6 @@ public class ConfigurationMetadata {
 		return null;
 	}
 
-	private List<ItemMetadata> getCandidates(String name) {
-		List<ItemMetadata> candidates = this.items.get(name);
-		return (candidates != null ? new ArrayList<>(candidates) : new ArrayList<>());
-	}
-
 	private boolean nullSafeEquals(Object o1, Object o2) {
 		if (o1 == o2) {
 			return true;
@@ -178,9 +174,9 @@ public class ConfigurationMetadata {
 	}
 
 	public static String nestedPrefix(String prefix, String name) {
-		String nestedPrefix = (prefix != null ? prefix : "");
+		String nestedPrefix = (prefix != null) ? prefix : "";
 		String dashedName = toDashedCase(name);
-		nestedPrefix += ("".equals(nestedPrefix) ? dashedName : "." + dashedName);
+		nestedPrefix += "".equals(nestedPrefix) ? dashedName : "." + dashedName;
 		return nestedPrefix;
 	}
 

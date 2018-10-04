@@ -42,7 +42,7 @@ class ConfigurationPropertySourcesPropertySource
 	@Override
 	public Object getProperty(String name) {
 		ConfigurationProperty configurationProperty = findConfigurationProperty(name);
-		return (configurationProperty != null ? configurationProperty.getValue() : null);
+		return (configurationProperty != null) ? configurationProperty.getValue() : null;
 	}
 
 	@Override
@@ -52,13 +52,11 @@ class ConfigurationPropertySourcesPropertySource
 
 	private ConfigurationProperty findConfigurationProperty(String name) {
 		try {
-			if (ConfigurationPropertyName.isValid(name)) {
-				return findConfigurationProperty(ConfigurationPropertyName.of(name));
-			}
+			return findConfigurationProperty(ConfigurationPropertyName.of(name, true));
 		}
 		catch (Exception ex) {
+			return null;
 		}
-		return null;
 	}
 
 	private ConfigurationProperty findConfigurationProperty(

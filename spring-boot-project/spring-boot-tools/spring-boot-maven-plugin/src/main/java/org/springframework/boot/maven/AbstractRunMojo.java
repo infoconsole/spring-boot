@@ -267,7 +267,8 @@ public abstract class AbstractRunMojo extends AbstractDependencyFilterMojo {
 						+ "]");
 			}
 			if (hasWorkingDirectorySet()) {
-				getLog().warn("Fork mode disabled, ignoring working directory configuration");
+				getLog().warn(
+						"Fork mode disabled, ignoring working directory configuration");
 			}
 		}
 	}
@@ -317,7 +318,7 @@ public abstract class AbstractRunMojo extends AbstractDependencyFilterMojo {
 
 	/**
 	 * Resolve the environment variables to use.
-	 * @return a {@link EnvVariables} defining the environment variables
+	 * @return an {@link EnvVariables} defining the environment variables
 	 */
 	protected EnvVariables resolveEnvVariables() {
 		return new EnvVariables(this.environmentVariables);
@@ -390,9 +391,10 @@ public abstract class AbstractRunMojo extends AbstractDependencyFilterMojo {
 		try {
 			StringBuilder classpath = new StringBuilder();
 			for (URL ele : getClassPathUrls()) {
-				classpath = classpath
-						.append((classpath.length() > 0 ? File.pathSeparator : "")
-								+ new File(ele.toURI()));
+				if (classpath.length() > 0) {
+					classpath.append(File.pathSeparator);
+				}
+				classpath.append(new File(ele.toURI()));
 			}
 			if (getLog().isDebugEnabled()) {
 				getLog().debug("Classpath for forked process: " + classpath);
@@ -475,7 +477,8 @@ public abstract class AbstractRunMojo extends AbstractDependencyFilterMojo {
 
 	private void logArguments(String message, String[] args) {
 		if (getLog().isDebugEnabled()) {
-			getLog().debug(Arrays.stream(args).collect(Collectors.joining(" ", message, "")));
+			getLog().debug(
+					Arrays.stream(args).collect(Collectors.joining(" ", message, "")));
 		}
 	}
 
@@ -509,7 +512,7 @@ public abstract class AbstractRunMojo extends AbstractDependencyFilterMojo {
 		public void uncaughtException(Thread thread, Throwable ex) {
 			if (!(ex instanceof ThreadDeath)) {
 				synchronized (this.monitor) {
-					this.exception = (this.exception != null ? this.exception : ex);
+					this.exception = (this.exception != null) ? this.exception : ex;
 				}
 				getLog().warn(ex);
 			}
@@ -539,7 +542,7 @@ public abstract class AbstractRunMojo extends AbstractDependencyFilterMojo {
 
 		LaunchRunner(String startClassName, String... args) {
 			this.startClassName = startClassName;
-			this.args = (args != null ? args : new String[] {});
+			this.args = (args != null) ? args : new String[] {};
 		}
 
 		@Override

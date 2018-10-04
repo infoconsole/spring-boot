@@ -45,23 +45,19 @@ public class CompositeHealthIndicator implements HealthIndicator {
 	}
 
 	/**
-	 * Create a new {@link CompositeHealthIndicator} from the specified
-	 * indicators.
+	 * Create a new {@link CompositeHealthIndicator} from the specified indicators.
 	 * @param healthAggregator the health aggregator
-	 * @param indicators a map of {@link HealthIndicator HealthIndicators} with
-	 * the key being used as an indicator name.
-	 * @deprecated since 2.1.0 in favour of
-	 * {@link #CompositeHealthIndicator(HealthAggregator, HealthIndicatorRegistry)}
+	 * @param indicators a map of {@link HealthIndicator HealthIndicators} with the key
+	 * being used as an indicator name.
 	 */
-	@Deprecated
 	public CompositeHealthIndicator(HealthAggregator healthAggregator,
 			Map<String, HealthIndicator> indicators) {
 		this(healthAggregator, new DefaultHealthIndicatorRegistry(indicators));
 	}
 
 	/**
-	 * Create a new {@link CompositeHealthIndicator} from the indicators in the
-	 * given {@code registry}.
+	 * Create a new {@link CompositeHealthIndicator} from the indicators in the given
+	 * {@code registry}.
 	 * @param healthAggregator the health aggregator
 	 * @param registry the registry of {@link HealthIndicator HealthIndicators}.
 	 */
@@ -72,18 +68,26 @@ public class CompositeHealthIndicator implements HealthIndicator {
 	}
 
 	/**
-	 * Adds the given {@code healthIndicator}, associating it with the given
-	 * {@code name}.
+	 * Adds the given {@code healthIndicator}, associating it with the given {@code name}.
 	 * @param name the name of the indicator
 	 * @param indicator the indicator
-	 * @throws IllegalStateException if an indicator with the given {@code name}
-	 * is already registered.
+	 * @throws IllegalStateException if an indicator with the given {@code name} is
+	 * already registered.
 	 * @deprecated since 2.1.0 in favour of
 	 * {@link HealthIndicatorRegistry#register(String, HealthIndicator)}
 	 */
 	@Deprecated
 	public void addHealthIndicator(String name, HealthIndicator indicator) {
 		this.registry.register(name, indicator);
+	}
+
+	/**
+	 * Return the {@link HealthIndicatorRegistry} of this instance.
+	 * @return the registry of nested {@link HealthIndicator health indicators}
+	 * @since 2.1.0
+	 */
+	public HealthIndicatorRegistry getRegistry() {
+		return this.registry;
 	}
 
 	@Override

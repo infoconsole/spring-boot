@@ -19,12 +19,12 @@ package org.springframework.boot.actuate.health;
 import java.util.Map;
 
 import org.junit.Before;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.ExpectedException;
 import reactor.core.publisher.Mono;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
+import static org.assertj.core.api.Assertions.assertThatIllegalStateException;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.mock;
 
@@ -36,9 +36,6 @@ import static org.mockito.Mockito.mock;
  */
 public class DefaultReactiveHealthIndicatorRegistryTests {
 
-	@Rule
-	public ExpectedException thrown = ExpectedException.none();
-
 	private ReactiveHealthIndicator one = mock(ReactiveHealthIndicator.class);
 
 	private ReactiveHealthIndicator two = mock(ReactiveHealthIndicator.class);
@@ -47,10 +44,10 @@ public class DefaultReactiveHealthIndicatorRegistryTests {
 
 	@Before
 	public void setUp() {
-		given(this.one.health()).willReturn(Mono.just(
-				new Health.Builder().unknown().withDetail("1", "1").build()));
-		given(this.two.health()).willReturn(Mono.just(
-				new Health.Builder().unknown().withDetail("2", "2").build()));
+		given(this.one.health()).willReturn(
+				Mono.just(new Health.Builder().unknown().withDetail("1", "1").build()));
+		given(this.two.health()).willReturn(
+				Mono.just(new Health.Builder().unknown().withDetail("2", "2").build()));
 		this.registry = new DefaultReactiveHealthIndicatorRegistry();
 	}
 
@@ -66,9 +63,10 @@ public class DefaultReactiveHealthIndicatorRegistryTests {
 	@Test
 	public void registerAlreadyUsedName() {
 		this.registry.register("one", this.one);
-		this.thrown.expect(IllegalStateException.class);
-		this.thrown.expectMessage("HealthIndicator with name 'one' already registered");
-		this.registry.register("one", this.two);
+		assertThatIllegalStateException()
+				.isThrownBy(() -> this.registry.register("one", this.two))
+				.withMessageContaining(
+						"HealthIndicator with name 'one' already registered");
 	}
 
 	@Test
@@ -103,9 +101,8 @@ public class DefaultReactiveHealthIndicatorRegistryTests {
 	public void getAllIsImmutable() {
 		this.registry.register("one", this.one);
 		Map<String, ReactiveHealthIndicator> snapshot = this.registry.getAll();
-
-		this.thrown.expect(UnsupportedOperationException.class);
-		snapshot.clear();
+		assertThatExceptionOfType(UnsupportedOperationException.class)
+				.isThrownBy(snapshot::clear);
 	}
 
 }

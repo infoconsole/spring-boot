@@ -17,9 +17,7 @@
 package org.springframework.boot.autoconfigure.diagnostics.analyzer;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
-import java.util.Map;
 
 import org.junit.Test;
 
@@ -76,30 +74,6 @@ public class NoSuchBeanDefinitionFailureAnalyzerTests {
 		FailureAnalysis analysis = analyzeFailure(
 				createFailure(StringPropertyTypeConfiguration.class));
 		assertDescriptionConstructorMissingType(analysis, StringHandler.class, 0,
-				String.class);
-		assertBeanMethodDisabled(analysis,
-				"did not find property 'spring.string.enabled'",
-				TestPropertyAutoConfiguration.class, "string");
-		assertActionMissingType(analysis, String.class);
-	}
-
-	@Test
-	public void failureAnalysisForMissingCollectionType() {
-		FailureAnalysis analysis = analyzeFailure(
-				createFailure(StringCollectionConfiguration.class));
-		assertDescriptionConstructorMissingType(analysis, StringCollectionHandler.class,
-				0, String.class);
-		assertBeanMethodDisabled(analysis,
-				"did not find property 'spring.string.enabled'",
-				TestPropertyAutoConfiguration.class, "string");
-		assertActionMissingType(analysis, String.class);
-	}
-
-	@Test
-	public void failureAnalysisForMissingMapType() {
-		FailureAnalysis analysis = analyzeFailure(
-				createFailure(StringMapConfiguration.class));
-		assertDescriptionConstructorMissingType(analysis, StringMapHandler.class, 0,
 				String.class);
 		assertBeanMethodDisabled(analysis,
 				"did not find property 'spring.string.enabled'",
@@ -184,6 +158,17 @@ public class NoSuchBeanDefinitionFailureAnalyzerTests {
 		assertActionMissingName(analysis, "test-string");
 	}
 
+	@Test
+	public void failureAnalysisForNullBeanByType() {
+		FailureAnalysis analysis = analyzeFailure(
+				createFailure(StringNullBeanConfiguration.class));
+		assertDescriptionConstructorMissingType(analysis, StringHandler.class, 0,
+				String.class);
+		assertUserDefinedBean(analysis, "as the bean value is null",
+				TestNullBeanConfiguration.class, "string");
+		assertActionMissingType(analysis, String.class);
+	}
+
 	private void assertDescriptionConstructorMissingType(FailureAnalysis analysis,
 			Class<?> component, int index, Class<?> type) {
 		String expected = String.format(
@@ -195,14 +180,14 @@ public class NoSuchBeanDefinitionFailureAnalyzerTests {
 
 	private void assertActionMissingType(FailureAnalysis analysis, Class<?> type) {
 		assertThat(analysis.getAction()).startsWith(String.format(
-				"Consider revisiting the conditions above or defining a bean of type '%s' "
+				"Consider revisiting the entries above or defining a bean of type '%s' "
 						+ "in your configuration.",
 				type.getName()));
 	}
 
 	private void assertActionMissingName(FailureAnalysis analysis, String name) {
 		assertThat(analysis.getAction()).startsWith(String.format(
-				"Consider revisiting the conditions above or defining a bean named '%s' "
+				"Consider revisiting the entries above or defining a bean named '%s' "
 						+ "in your configuration.",
 				name));
 	}
@@ -219,6 +204,14 @@ public class NoSuchBeanDefinitionFailureAnalyzerTests {
 			String methodName) {
 		String expected = String.format("Bean method '%s' not loaded because",
 				methodName);
+		assertThat(analysis.getDescription()).contains(expected);
+		assertThat(analysis.getDescription()).contains(description);
+	}
+
+	private void assertUserDefinedBean(FailureAnalysis analysis, String description,
+			Class<?> target, String methodName) {
+		String expected = String.format("User-defined bean method '%s' in '%s' ignored",
+				methodName, ClassUtils.getShortName(target));
 		assertThat(analysis.getDescription()).contains(expected);
 		assertThat(analysis.getDescription()).contains(description);
 	}
@@ -264,20 +257,6 @@ public class NoSuchBeanDefinitionFailureAnalyzerTests {
 
 	@Configuration
 	@ImportAutoConfiguration(TestPropertyAutoConfiguration.class)
-	@Import(StringCollectionHandler.class)
-	protected static class StringCollectionConfiguration {
-
-	}
-
-	@Configuration
-	@ImportAutoConfiguration(TestPropertyAutoConfiguration.class)
-	@Import(StringMapHandler.class)
-	protected static class StringMapConfiguration {
-
-	}
-
-	@Configuration
-	@ImportAutoConfiguration(TestPropertyAutoConfiguration.class)
 	@Import(NumberHandler.class)
 	protected static class IntegerPropertyTypeConfiguration {
 
@@ -302,6 +281,13 @@ public class NoSuchBeanDefinitionFailureAnalyzerTests {
 	@ImportAutoConfiguration(TestMissingBeanAutoConfiguration.class)
 	@Import(StringNameHandler.class)
 	protected static class StringMissingBeanNameConfiguration {
+
+	}
+
+	@Configuration
+	@ImportAutoConfiguration(TestNullBeanConfiguration.class)
+	@Import(StringHandler.class)
+	protected static class StringNullBeanConfiguration {
 
 	}
 
@@ -344,6 +330,16 @@ public class NoSuchBeanDefinitionFailureAnalyzerTests {
 
 	}
 
+	@Configuration
+	public static class TestNullBeanConfiguration {
+
+		@Bean
+		public String string() {
+			return null;
+		}
+
+	}
+
 	protected static class StringHandler {
 
 		public StringHandler(String foo) {
@@ -362,20 +358,6 @@ public class NoSuchBeanDefinitionFailureAnalyzerTests {
 
 		public StringNameHandler(BeanFactory beanFactory) {
 			beanFactory.getBean("test-string");
-		}
-
-	}
-
-	protected static class StringCollectionHandler {
-
-		public StringCollectionHandler(Collection<String> collection) {
-		}
-
-	}
-
-	protected static class StringMapHandler {
-
-		public StringMapHandler(Map<String, String> map) {
 		}
 
 	}

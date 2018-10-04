@@ -43,8 +43,6 @@ import org.springframework.util.StringUtils;
  */
 public class PropertiesMeterFilter implements MeterFilter {
 
-	private static final ServiceLevelAgreementBoundary[] EMPTY_SLA = {};
-
 	private final MetricsProperties properties;
 
 	private final MeterFilter mapFilter;
@@ -57,17 +55,19 @@ public class PropertiesMeterFilter implements MeterFilter {
 
 	private static MeterFilter createMapFilter(Map<String, String> tags) {
 		if (tags.isEmpty()) {
-			return new MeterFilter() { };
+			return new MeterFilter() {
+			};
 		}
-		Tags commonTags = Tags.of(tags.entrySet().stream().map((entry) ->
-				Tag.of(entry.getKey(), entry.getValue())).collect(Collectors.toList()));
+		Tags commonTags = Tags.of(tags.entrySet().stream()
+				.map((entry) -> Tag.of(entry.getKey(), entry.getValue()))
+				.collect(Collectors.toList()));
 		return MeterFilter.commonTags(commonTags);
 	}
 
 	@Override
 	public MeterFilterReply accept(Meter.Id id) {
 		boolean enabled = lookup(this.properties.getEnable(), id, true);
-		return (enabled ? MeterFilterReply.NEUTRAL : MeterFilterReply.DENY);
+		return enabled ? MeterFilterReply.NEUTRAL : MeterFilterReply.DENY;
 	}
 
 	@Override
@@ -78,24 +78,29 @@ public class PropertiesMeterFilter implements MeterFilter {
 	@Override
 	public DistributionStatisticConfig configure(Meter.Id id,
 			DistributionStatisticConfig config) {
-		DistributionStatisticConfig.Builder builder = DistributionStatisticConfig
-				.builder();
 		Distribution distribution = this.properties.getDistribution();
-		builder.percentilesHistogram(
-				lookup(distribution.getPercentilesHistogram(), id, null));
-		builder.percentiles(lookup(distribution.getPercentiles(), id, null));
-		builder.sla(convertSla(id.getType(), lookup(distribution.getSla(), id, null)));
-		return builder.build().merge(config);
+		return DistributionStatisticConfig.builder()
+				.percentilesHistogram(
+						lookup(distribution.getPercentilesHistogram(), id, null))
+				.percentiles(lookup(distribution.getPercentiles(), id, null))
+				.sla(convertSla(id.getType(), lookup(distribution.getSla(), id, null)))
+				.build().merge(config);
 	}
 
 	private long[] convertSla(Meter.Type meterType, ServiceLevelAgreementBoundary[] sla) {
-		long[] converted = Arrays.stream(sla != null ? sla : EMPTY_SLA)
+		if (sla == null) {
+			return null;
+		}
+		long[] converted = Arrays.stream(sla)
 				.map((candidate) -> candidate.getValue(meterType))
 				.filter(Objects::nonNull).mapToLong(Long::longValue).toArray();
-		return (converted.length != 0 ? converted : null);
+		return (converted.length != 0) ? converted : null;
 	}
 
 	private <T> T lookup(Map<String, T> values, Id id, T defaultValue) {
+		if (values.isEmpty()) {
+			return defaultValue;
+		}
 		String name = id.getName();
 		while (StringUtils.hasLength(name)) {
 			T result = values.get(name);
@@ -103,7 +108,7 @@ public class PropertiesMeterFilter implements MeterFilter {
 				return result;
 			}
 			int lastDot = name.lastIndexOf('.');
-			name = (lastDot != -1 ? name.substring(0, lastDot) : "");
+			name = (lastDot != -1) ? name.substring(0, lastDot) : "";
 		}
 		return values.getOrDefault("all", defaultValue);
 	}

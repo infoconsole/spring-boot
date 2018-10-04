@@ -25,7 +25,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication.Type;
 import org.springframework.boot.autoconfigure.web.servlet.DispatcherServletAutoConfiguration;
-import org.springframework.boot.autoconfigure.web.servlet.DispatcherServletPathProvider;
+import org.springframework.boot.autoconfigure.web.servlet.DispatcherServletRegistrationBean;
 import org.springframework.boot.web.servlet.error.ErrorAttributes;
 import org.springframework.boot.web.servlet.filter.OrderedRequestContextFilter;
 import org.springframework.context.annotation.Bean;
@@ -70,6 +70,12 @@ class WebMvcEndpointChildContextConfiguration {
 		return dispatcherServlet;
 	}
 
+	@Bean(name = DispatcherServletAutoConfiguration.DEFAULT_DISPATCHER_SERVLET_REGISTRATION_BEAN_NAME)
+	public DispatcherServletRegistrationBean dispatcherServletRegistrationBean(
+			DispatcherServlet dispatcherServlet) {
+		return new DispatcherServletRegistrationBean(dispatcherServlet, "/");
+	}
+
 	@Bean(name = DispatcherServlet.HANDLER_MAPPING_BEAN_NAME)
 	public CompositeHandlerMapping compositeHandlerMapping() {
 		return new CompositeHandlerMapping();
@@ -91,11 +97,6 @@ class WebMvcEndpointChildContextConfiguration {
 			RequestContextFilter.class })
 	public RequestContextFilter requestContextFilter() {
 		return new OrderedRequestContextFilter();
-	}
-
-	@Bean
-	public DispatcherServletPathProvider childDispatcherServletPathProvider() {
-		return () -> "";
 	}
 
 }

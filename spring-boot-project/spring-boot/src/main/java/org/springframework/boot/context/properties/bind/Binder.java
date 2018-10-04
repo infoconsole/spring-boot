@@ -45,7 +45,6 @@ import org.springframework.core.convert.ConverterNotFoundException;
 import org.springframework.core.env.Environment;
 import org.springframework.format.support.DefaultFormattingConversionService;
 import org.springframework.util.Assert;
-import org.springframework.util.ClassUtils;
 
 /**
  * A container object which Binds objects from one or more
@@ -133,10 +132,10 @@ public class Binder {
 			Consumer<PropertyEditorRegistry> propertyEditorInitializer) {
 		Assert.notNull(sources, "Sources must not be null");
 		this.sources = sources;
-		this.placeholdersResolver = (placeholdersResolver != null ? placeholdersResolver
-				: PlaceholdersResolver.NONE);
-		this.conversionService = (conversionService != null ? conversionService
-				: ApplicationConversionService.getSharedInstance());
+		this.placeholdersResolver = (placeholdersResolver != null) ? placeholdersResolver
+				: PlaceholdersResolver.NONE;
+		this.conversionService = (conversionService != null) ? conversionService
+				: ApplicationConversionService.getSharedInstance();
 		this.propertyEditorInitializer = propertyEditorInitializer;
 	}
 
@@ -205,7 +204,7 @@ public class Binder {
 			BindHandler handler) {
 		Assert.notNull(name, "Name must not be null");
 		Assert.notNull(target, "Target must not be null");
-		handler = (handler != null ? handler : BindHandler.DEFAULT);
+		handler = (handler != null) ? handler : BindHandler.DEFAULT;
 		Context context = new Context();
 		T bound = bind(name, target, handler, context, false);
 		return BindResult.of(bound);
@@ -354,8 +353,7 @@ public class Binder {
 		if (resolved.isPrimitive() || NON_BEAN_CLASSES.contains(resolved)) {
 			return true;
 		}
-		String packageName = ClassUtils.getPackageName(resolved);
-		return packageName.startsWith("java.");
+		return resolved.getName().startsWith("java.");
 	}
 
 	private boolean containsNoDescendantOf(Stream<ConfigurationPropertySource> sources,
@@ -394,7 +392,7 @@ public class Binder {
 		private ConfigurationProperty configurationProperty;
 
 		Context() {
-			this.converter = new BindConverter(Binder.this.conversionService,
+			this.converter = BindConverter.get(Binder.this.conversionService,
 					Binder.this.propertyEditorInitializer);
 		}
 

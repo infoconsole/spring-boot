@@ -18,10 +18,7 @@ package org.springframework.boot.test.context;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
-import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Set;
 
 import org.springframework.beans.BeanUtils;
 import org.springframework.boot.SpringApplication;
@@ -80,15 +77,6 @@ import org.springframework.web.context.support.GenericWebApplicationContext;
  */
 public class SpringBootContextLoader extends AbstractContextLoader {
 
-	private static final Set<String> INTEGRATION_TEST_ANNOTATIONS;
-
-	static {
-		Set<String> annotations = new LinkedHashSet<>();
-		annotations.add("org.springframework.boot.test.IntegrationTest");
-		annotations.add("org.springframework.boot.test.WebIntegrationTest");
-		INTEGRATION_TEST_ANNOTATIONS = Collections.unmodifiableSet(annotations);
-	}
-
 	@Override
 	public ApplicationContext loadContext(MergedContextConfiguration config)
 			throws Exception {
@@ -110,9 +98,9 @@ public class SpringBootContextLoader extends AbstractContextLoader {
 		if (!ObjectUtils.isEmpty(config.getActiveProfiles())) {
 			setActiveProfiles(environment, config.getActiveProfiles());
 		}
-		ResourceLoader resourceLoader = (application.getResourceLoader() != null
+		ResourceLoader resourceLoader = (application.getResourceLoader() != null)
 				? application.getResourceLoader()
-				: new DefaultResourceLoader(getClass().getClassLoader()));
+				: new DefaultResourceLoader(getClass().getClassLoader());
 		TestPropertySourceUtils.addPropertiesFilesToEnvironment(environment,
 				resourceLoader, config.getPropertySourceLocations());
 		TestPropertySourceUtils.addInlinedPropertiesToEnvironment(environment,
@@ -222,11 +210,6 @@ public class SpringBootContextLoader extends AbstractContextLoader {
 	}
 
 	private boolean isEmbeddedWebEnvironment(MergedContextConfiguration config) {
-		for (String annotation : INTEGRATION_TEST_ANNOTATIONS) {
-			if (AnnotatedElementUtils.isAnnotated(config.getTestClass(), annotation)) {
-				return true;
-			}
-		}
 		SpringBootTest annotation = AnnotatedElementUtils
 				.findMergedAnnotation(config.getTestClass(), SpringBootTest.class);
 		if (annotation != null && annotation.webEnvironment().isEmbedded()) {

@@ -34,11 +34,11 @@ import io.micrometer.core.instrument.Statistic;
 import io.micrometer.core.instrument.Tag;
 import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
 
+import org.springframework.boot.actuate.endpoint.InvalidEndpointRequestException;
 import org.springframework.boot.actuate.endpoint.annotation.Endpoint;
 import org.springframework.boot.actuate.endpoint.annotation.ReadOperation;
 import org.springframework.boot.actuate.endpoint.annotation.Selector;
 import org.springframework.lang.Nullable;
-import org.springframework.util.Assert;
 
 /**
  * An {@link Endpoint} for exposing the metrics held by a {@link MeterRegistry}.
@@ -80,8 +80,6 @@ public class MetricsEndpoint {
 	@ReadOperation
 	public MetricResponse metric(@Selector String requiredMetricName,
 			@Nullable List<String> tag) {
-		Assert.isTrue(tag == null || tag.stream().allMatch((t) -> t.contains(":")),
-				"Each tag parameter must be in the form key:value");
 		List<Tag> tags = parseTags(tag);
 		List<Meter> meters = new ArrayList<>();
 		collectMeters(meters, this.registry, requiredMetricName, tags);
@@ -91,7 +89,9 @@ public class MetricsEndpoint {
 		Map<Statistic, Double> samples = getSamples(meters);
 		Map<String, Set<String>> availableTags = getAvailableTags(meters);
 		tags.forEach((t) -> availableTags.remove(t.getKey()));
-		return new MetricResponse(requiredMetricName, asList(samples, Sample::new),
+		Meter.Id meterId = meters.get(0).getId();
+		return new MetricResponse(requiredMetricName, meterId.getDescription(),
+				meterId.getBaseUnit(), asList(samples, Sample::new),
 				asList(availableTags, AvailableTag::new));
 	}
 
@@ -104,6 +104,11 @@ public class MetricsEndpoint {
 
 	private Tag parseTag(String tag) {
 		String[] parts = tag.split(":", 2);
+		if (parts.length != 2) {
+			throw new InvalidEndpointRequestException(
+					"Each tag parameter must be in the form 'key:value' but was: " + tag,
+					"Each tag parameter must be in the form 'key:value'");
+		}
 		return Tag.of(parts[0], parts[1]);
 	}
 
@@ -130,7 +135,7 @@ public class MetricsEndpoint {
 	}
 
 	private BiFunction<Double, Double, Double> mergeFunction(Statistic statistic) {
-		return (Statistic.MAX.equals(statistic) ? Double::max : Double::sum);
+		return Statistic.MAX.equals(statistic) ? Double::max : Double::sum;
 	}
 
 	private Map<String, Set<String>> getAvailableTags(List<Meter> meters) {
@@ -156,7 +161,7 @@ public class MetricsEndpoint {
 	private <K, V, T> List<T> asList(Map<K, V> map, BiFunction<K, V, T> mapper) {
 		return map.entrySet().stream()
 				.map((entry) -> mapper.apply(entry.getKey(), entry.getValue()))
-				.collect(Collectors.toCollection(ArrayList::new));
+				.collect(Collectors.toList());
 	}
 
 	/**
@@ -183,19 +188,33 @@ public class MetricsEndpoint {
 
 		private final String name;
 
+		private final String description;
+
+		private final String baseUnit;
+
 		private final List<Sample> measurements;
 
 		private final List<AvailableTag> availableTags;
 
-		MetricResponse(String name, List<Sample> measurements,
-				List<AvailableTag> availableTags) {
+		MetricResponse(String name, String description, String baseUnit,
+				List<Sample> measurements, List<AvailableTag> availableTags) {
 			this.name = name;
+			this.description = description;
+			this.baseUnit = baseUnit;
 			this.measurements = measurements;
 			this.availableTags = availableTags;
 		}
 
 		public String getName() {
 			return this.name;
+		}
+
+		public String getDescription() {
+			return this.description;
+		}
+
+		public String getBaseUnit() {
+			return this.baseUnit;
 		}
 
 		public List<Sample> getMeasurements() {

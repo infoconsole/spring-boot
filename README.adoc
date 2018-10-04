@@ -1,4 +1,4 @@
-= Spring Boot image:https://ci.spring.io/api/v1/teams/spring-boot/pipelines/spring-boot-2.0.x/jobs/build/badge["Build Status", link="https://ci.spring.io/teams/spring-boot/pipelines/spring-boot-2.0.x?groups=Build"] image:https://badges.gitter.im/Join Chat.svg["Chat",link="https://gitter.im/spring-projects/spring-boot?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge"]
+= Spring Boot image:https://ci.spring.io/api/v1/teams/spring-boot/pipelines/spring-boot/jobs/build/badge["Build Status", link="https://ci.spring.io/teams/spring-boot/pipelines/spring-boot?groups=Build"] image:https://badges.gitter.im/Join Chat.svg["Chat",link="https://gitter.im/spring-projects/spring-boot?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge"]
 :docs: https://docs.spring.io/spring-boot/docs/current-SNAPSHOT/reference
 
 Spring Boot makes it easy to create Spring-powered, production-grade applications and
@@ -67,7 +67,8 @@ Having trouble with Spring Boot? We'd like to help!
 * If you are upgrading, read the https://github.com/spring-projects/spring-boot/wiki[release notes]
   for upgrade instructions and "new and noteworthy" features.
 * Ask a question - we monitor https://stackoverflow.com[stackoverflow.com] for questions
-  tagged with https://stackoverflow.com/tags/spring-boot[`spring-boot`].
+  tagged with https://stackoverflow.com/tags/spring-boot[`spring-boot`]. You can also chat
+  with the community on https://gitter.im/spring-projects/spring-boot[Gitter].
 * Report bugs with Spring Boot at https://github.com/spring-projects/spring-boot/issues[github.com/spring-projects/spring-boot/issues].
 
 
@@ -103,7 +104,7 @@ https://github.com/takari/maven-wrapper[maven wrapper]. You also need JDK 1.8.
 ----
 
 If you want to build with the regular `mvn` command, you will need
-https://maven.apache.org/run-maven/index.html[Maven v3.2.1 or above].
+https://maven.apache.org/run-maven/index.html[Maven v3.5.0 or above].
 
 NOTE: You may need to increase the amount of memory available to Maven by setting
 a `MAVEN_OPTS` environment variable with the value `-Xmx512m`. Remember
@@ -223,7 +224,7 @@ This module contains core items and annotations that can be helpful when testing
 
 
 === spring-boot-test-autoconfigure
-Like other Spring Boot Auto-Configuration modules, spring-boot-test-autoconfigure, provides auto-configuration
+Like other Spring Boot auto-configuration modules, spring-boot-test-autoconfigure, provides auto-configuration
 for tests based on the classpath. It includes a number of annotations that can be used to automatically
 configure a slice of your application that needs to be tested.
 

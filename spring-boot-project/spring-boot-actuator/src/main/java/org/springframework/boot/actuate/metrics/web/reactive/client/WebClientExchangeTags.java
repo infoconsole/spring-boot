@@ -17,6 +17,7 @@
 package org.springframework.boot.actuate.metrics.web.reactive.client;
 
 import java.io.IOException;
+import java.util.regex.Pattern;
 
 import io.micrometer.core.instrument.Tag;
 
@@ -40,6 +41,11 @@ public final class WebClientExchangeTags {
 	private static final Tag IO_ERROR = Tag.of("status", "IO_ERROR");
 
 	private static final Tag CLIENT_ERROR = Tag.of("status", "CLIENT_ERROR");
+
+	private static final Pattern PATTERN_BEFORE_PATH = Pattern
+			.compile("^https?://[^/]+/");
+
+	private static final Tag CLIENT_NAME_NONE = Tag.of("clientName", "none");
 
 	private WebClientExchangeTags() {
 	}
@@ -66,8 +72,8 @@ public final class WebClientExchangeTags {
 	}
 
 	private static String extractPath(String url) {
-		String path = url.replaceFirst("^https?://[^/]+/", "");
-		return path.startsWith("/") ? path : "/" + path;
+		String path = PATTERN_BEFORE_PATH.matcher(url).replaceFirst("");
+		return (path.startsWith("/") ? path : "/" + path);
 	}
 
 	/**
@@ -77,7 +83,7 @@ public final class WebClientExchangeTags {
 	 * @return the status tag
 	 */
 	public static Tag status(ClientResponse response) {
-		return Tag.of("status", response.statusCode().toString());
+		return Tag.of("status", String.valueOf(response.statusCode().value()));
 	}
 
 	/**
@@ -87,7 +93,7 @@ public final class WebClientExchangeTags {
 	 * @return the status tag
 	 */
 	public static Tag status(Throwable throwable) {
-		return throwable instanceof IOException ? IO_ERROR : CLIENT_ERROR;
+		return (throwable instanceof IOException) ? IO_ERROR : CLIENT_ERROR;
 	}
 
 	/**
@@ -100,7 +106,7 @@ public final class WebClientExchangeTags {
 	public static Tag clientName(ClientRequest request) {
 		String host = request.url().getHost();
 		if (host == null) {
-			host = "none";
+			return CLIENT_NAME_NONE;
 		}
 		return Tag.of("clientName", host);
 	}

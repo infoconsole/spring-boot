@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2017 the original author or authors.
+ * Copyright 2012-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,41 +16,58 @@
 
 package org.springframework.boot.autoconfigure.security.oauth2.client;
 
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.ExpectedException;
+
+import org.springframework.boot.autoconfigure.security.oauth2.client.OAuth2ClientProperties.AuthorizationCodeClientRegistration;
+import org.springframework.boot.autoconfigure.security.oauth2.client.OAuth2ClientProperties.LoginClientRegistration;
+
+import static org.assertj.core.api.Assertions.assertThatIllegalStateException;
 
 /**
  * Tests for {@link OAuth2ClientProperties}.
  *
  * @author Madhura Bhave
+ * @author Artsiom Yudovin
  */
 public class OAuth2ClientPropertiesTests {
 
 	private OAuth2ClientProperties properties = new OAuth2ClientProperties();
 
-	@Rule
-	public ExpectedException thrown = ExpectedException.none();
-
 	@Test
-	public void clientIdAbsentThrowsException() {
-		OAuth2ClientProperties.Registration registration = new OAuth2ClientProperties.Registration();
+	public void clientIdAbsentForLoginClientsThrowsException() {
+		LoginClientRegistration registration = new LoginClientRegistration();
 		registration.setClientSecret("secret");
 		registration.setProvider("google");
-		this.properties.getRegistration().put("foo", registration);
-		this.thrown.expect(IllegalStateException.class);
-		this.thrown.expectMessage("Client id must not be empty.");
+		this.properties.getRegistration().getLogin().put("foo", registration);
+		assertThatIllegalStateException().isThrownBy(this.properties::validate)
+				.withMessageContaining("Client id must not be empty.");
+	}
+
+	@Test
+	public void clientSecretAbsentShouldNotThrowException() {
+		LoginClientRegistration registration = new LoginClientRegistration();
+		registration.setClientId("foo");
+		registration.setProvider("google");
+		this.properties.getRegistration().getLogin().put("foo", registration);
 		this.properties.validate();
 	}
 
 	@Test
-	public void clientSecretAbsentThrowsException() {
-		OAuth2ClientProperties.Registration registration = new OAuth2ClientProperties.Registration();
+	public void clientIdAbsentForAuthorizationCodeClientsThrowsException() {
+		AuthorizationCodeClientRegistration registration = new AuthorizationCodeClientRegistration();
+		registration.setClientSecret("secret");
+		registration.setProvider("google");
+		this.properties.getRegistration().getAuthorizationCode().put("foo", registration);
+		assertThatIllegalStateException().isThrownBy(this.properties::validate)
+				.withMessageContaining("Client id must not be empty.");
+	}
+
+	@Test
+	public void clientSecretAbsentForAuthorizationCodeClientDoesNotThrowException() {
+		AuthorizationCodeClientRegistration registration = new AuthorizationCodeClientRegistration();
 		registration.setClientId("foo");
 		registration.setProvider("google");
-		this.properties.getRegistration().put("foo", registration);
-		this.thrown.expect(IllegalStateException.class);
-		this.thrown.expectMessage("Client secret must not be empty.");
+		this.properties.getRegistration().getAuthorizationCode().put("foo", registration);
 		this.properties.validate();
 	}
 

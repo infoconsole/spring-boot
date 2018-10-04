@@ -101,20 +101,20 @@ public class ServletRegistrationBean<T extends Servlet>
 	}
 
 	/**
-	 * Returns the servlet being registered.
-	 * @return the servlet
-	 */
-	protected T getServlet() {
-		return this.servlet;
-	}
-
-	/**
 	 * Sets the servlet to be registered.
 	 * @param servlet the servlet
 	 */
 	public void setServlet(T servlet) {
 		Assert.notNull(servlet, "Servlet must not be null");
 		this.servlet = servlet;
+	}
+
+	/**
+	 * Return the servlet being registered.
+	 * @return the servlet
+	 */
+	public T getServlet() {
+		return this.servlet;
 	}
 
 	/**

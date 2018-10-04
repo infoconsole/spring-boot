@@ -124,13 +124,34 @@ public class CollectionBinderTests {
 			fail("No exception thrown");
 		}
 		catch (BindException ex) {
-			ex.printStackTrace();
 			Set<ConfigurationProperty> unbound = ((UnboundConfigurationPropertiesException) ex
 					.getCause()).getUnboundProperties();
 			assertThat(unbound).hasSize(1);
 			ConfigurationProperty property = unbound.iterator().next();
 			assertThat(property.getName().toString()).isEqualTo("foo[3]");
 			assertThat(property.getValue()).isEqualTo("3");
+		}
+	}
+
+	@Test
+	public void bindToNonScalarCollectionWhenNonSequentialShouldThrowException() {
+		MockConfigurationPropertySource source = new MockConfigurationPropertySource();
+		source.put("foo[0].value", "1");
+		source.put("foo[1].value", "2");
+		source.put("foo[4].value", "4");
+		this.sources.add(source);
+		try {
+			Bindable<List<JavaBean>> target = Bindable.listOf(JavaBean.class);
+			this.binder.bind("foo", target);
+			fail("No exception thrown");
+		}
+		catch (BindException ex) {
+			Set<ConfigurationProperty> unbound = ((UnboundConfigurationPropertiesException) ex
+					.getCause()).getUnboundProperties();
+			assertThat(unbound).hasSize(1);
+			ConfigurationProperty property = unbound.iterator().next();
+			assertThat(property.getName().toString()).isEqualTo("foo[4].value");
+			assertThat(property.getValue()).isEqualTo("4");
 		}
 	}
 
@@ -417,6 +438,16 @@ public class CollectionBinderTests {
 		assertThat(bean.getBar()).containsExactly("hello");
 	}
 
+	@Test
+	public void bindToBeanWithExceptionInGetterForExistingValue() {
+		MockConfigurationPropertySource source = new MockConfigurationPropertySource();
+		source.put("foo.values", "a,b,c");
+		this.sources.add(source);
+		BeanWithGetterException result = this.binder
+				.bind("foo", Bindable.of(BeanWithGetterException.class)).get();
+		assertThat(result.getValues()).containsExactly("a", "b", "c");
+	}
+
 	public static class ExampleCollectionBean {
 
 		private List<String> items = new ArrayList<>();
@@ -517,6 +548,20 @@ public class CollectionBinderTests {
 
 		public void setBar(String[] bar) {
 			this.bar = bar;
+		}
+
+	}
+
+	public static class BeanWithGetterException {
+
+		private List<String> values;
+
+		public void setValues(List<String> values) {
+			this.values = values;
+		}
+
+		public List<String> getValues() {
+			return Collections.unmodifiableList(this.values);
 		}
 
 	}
