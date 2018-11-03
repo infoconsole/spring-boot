@@ -16,12 +16,12 @@
 
 package org.springframework.boot.actuate.autoconfigure.metrics;
 
-import java.util.List;
-
 import io.micrometer.core.instrument.Clock;
+import io.micrometer.core.instrument.Meter;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.binder.MeterBinder;
 import io.micrometer.core.instrument.config.MeterFilter;
+import io.micrometer.core.instrument.config.MeterFilterReply;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.junit.Test;
 
@@ -29,11 +29,11 @@ import org.springframework.boot.autoconfigure.AutoConfigurations;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.annotation.Order;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 
 /**
@@ -65,9 +65,14 @@ public class MetricsAutoConfigurationTests {
 		this.contextRunner.withUserConfiguration(MeterRegistryConfiguration.class)
 				.run((context) -> {
 					MeterRegistry meterRegistry = context.getBean(MeterRegistry.class);
-					List<MeterFilter> filters = (List<MeterFilter>) ReflectionTestUtils
+					MeterFilter[] filters = (MeterFilter[]) ReflectionTestUtils
 							.getField(meterRegistry, "filters");
-					assertThat(filters).isNotEmpty();
+					assertThat(filters).hasSize(3);
+					assertThat(filters[0].accept((Meter.Id) null))
+							.isEqualTo(MeterFilterReply.DENY);
+					assertThat(filters[1]).isInstanceOf(PropertiesMeterFilter.class);
+					assertThat(filters[2].accept((Meter.Id) null))
+							.isEqualTo(MeterFilterReply.ACCEPT);
 					verify((MeterBinder) context.getBean("meterBinder"))
 							.bindTo(meterRegistry);
 					verify(context.getBean(MeterRegistryCustomizer.class))
@@ -90,8 +95,7 @@ public class MetricsAutoConfigurationTests {
 
 		@Bean
 		MeterRegistry meterRegistry() {
-			SimpleMeterRegistry meterRegistry = new SimpleMeterRegistry();
-			return spy(meterRegistry);
+			return new SimpleMeterRegistry();
 		}
 
 		@Bean
@@ -103,6 +107,18 @@ public class MetricsAutoConfigurationTests {
 		@Bean
 		MeterBinder meterBinder() {
 			return mock(MeterBinder.class);
+		}
+
+		@Bean
+		@Order(1)
+		MeterFilter acceptMeterFilter() {
+			return MeterFilter.accept();
+		}
+
+		@Bean
+		@Order(-1)
+		MeterFilter denyMeterFilter() {
+			return MeterFilter.deny();
 		}
 
 	}

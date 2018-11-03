@@ -133,6 +133,12 @@ public class CassandraProperties {
 	private boolean ssl = false;
 
 	/**
+	 * Whether to enable JMX reporting. Default to false as Cassandra JMX reporting is not
+	 * compatible with Dropwizard Metrics.
+	 */
+	private boolean jmxEnabled;
+
+	/**
 	 * Pool configuration.
 	 */
 	private final Pool pool = new Pool();
@@ -270,6 +276,14 @@ public class CassandraProperties {
 
 	public void setSsl(boolean ssl) {
 		this.ssl = ssl;
+	}
+
+	public boolean isJmxEnabled() {
+		return this.jmxEnabled;
+	}
+
+	public void setJmxEnabled(boolean jmxEnabled) {
+		this.jmxEnabled = jmxEnabled;
 	}
 
 	public String getSchemaAction() {

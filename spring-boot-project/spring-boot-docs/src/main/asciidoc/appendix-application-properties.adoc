@@ -98,7 +98,9 @@ content into your application. Rather, pick only the properties that you need.
 	spring.hazelcast.config= # The location of the configuration file to use to initialize Hazelcast.
 
 	# PROJECT INFORMATION ({sc-spring-boot-autoconfigure}/info/ProjectInfoProperties.{sc-ext}[ProjectInfoProperties])
+	spring.info.build.encoding=UTF-8 # File encoding.
 	spring.info.build.location=classpath:META-INF/build-info.properties # Location of the generated build-info.properties file.
+	spring.info.git.encoding=UTF-8 # File encoding.
 	spring.info.git.location=classpath:git.properties # Location of the generated git.properties file.
 
 	# JMX
@@ -185,7 +187,7 @@ content into your application. Rather, pick only the properties that you need.
 	# EMBEDDED SERVER CONFIGURATION ({sc-spring-boot-autoconfigure}/web/ServerProperties.{sc-ext}[ServerProperties])
 	server.address= # Network address to which the server should bind.
 	server.compression.enabled=false # Whether response compression is enabled.
-	server.compression.excluded-user-agents= # List of user-agents to exclude from compression.
+	server.compression.excluded-user-agents= # Comma-separated list of user agents for which responses should not be compressed.
 	server.compression.mime-types=text/html,text/xml,text/plain,text/css,text/javascript,application/javascript,application/json,application/xml # Comma-separated list of MIME types that should be compressed.
 	server.compression.min-response-size=2KB # Minimum "Content-Length" value that is required for compression to be performed.
 	server.connection-timeout= # Time that connectors wait for another HTTP request before closing the connection. When not set, the connector's container-specific default is used. Use a value of -1 to indicate no (that is, an infinite) timeout.
@@ -216,23 +218,23 @@ content into your application. Rather, pick only the properties that you need.
 	server.servlet.context-parameters.*= # Servlet context init parameters.
 	server.servlet.context-path= # Context path of the application.
 	server.servlet.application-display-name=application # Display name of the application.
-	server.servlet.jsp.class-name=org.apache.jasper.servlet.JspServlet # The class name of the JSP servlet.
+	server.servlet.jsp.class-name=org.apache.jasper.servlet.JspServlet # Class name of the servlet to use for JSPs.
 	server.servlet.jsp.init-parameters.*= # Init parameters used to configure the JSP servlet.
 	server.servlet.jsp.registered=true # Whether the JSP servlet is registered.
 	server.servlet.session.cookie.comment= # Comment for the session cookie.
 	server.servlet.session.cookie.domain= # Domain for the session cookie.
-	server.servlet.session.cookie.http-only= # "HttpOnly" flag for the session cookie.
+	server.servlet.session.cookie.http-only= # Whether to use "HttpOnly" cookies for session cookies.
 	server.servlet.session.cookie.max-age= # Maximum age of the session cookie. If a duration suffix is not specified, seconds will be used.
 	server.servlet.session.cookie.name= # Session cookie name.
 	server.servlet.session.cookie.path= # Path of the session cookie.
-	server.servlet.session.cookie.secure= # "Secure" flag for the session cookie.
+	server.servlet.session.cookie.secure= # Whether to always mark the session cookie as secure.
 	server.servlet.session.persistent=false # Whether to persist session data between restarts.
 	server.servlet.session.store-dir= # Directory used to store session data.
-	server.servlet.session.timeout= # Session timeout. If a duration suffix is not specified, seconds will be used.
-	server.servlet.session.tracking-modes= # Session tracking modes (one or more of the following: "cookie", "url", "ssl").
+	server.servlet.session.timeout=30m # Session timeout. If a duration suffix is not specified, seconds will be used.
+	server.servlet.session.tracking-modes= # Session tracking modes.
 	server.ssl.ciphers= # Supported SSL ciphers.
 	server.ssl.client-auth= # Whether client authentication is wanted ("want") or needed ("need"). Requires a trust store.
-	server.ssl.enabled= # Enable SSL support.
+	server.ssl.enabled=true # Whether to enable SSL support.
 	server.ssl.enabled-protocols= # Enabled SSL protocols.
 	server.ssl.key-alias= # Alias that identifies the key in the key store.
 	server.ssl.key-password= # Password used to access the key in the key store.
@@ -435,7 +437,7 @@ content into your application. Rather, pick only the properties that you need.
 	spring.mvc.ignore-default-model-on-redirect=true # Whether the content of the "default" model should be ignored during redirect scenarios.
 	spring.mvc.locale= # Locale to use. By default, this locale is overridden by the "Accept-Language" header.
 	spring.mvc.locale-resolver=accept-header # Define how the locale should be resolved.
-	spring.mvc.log-resolved-exception=false # Whether to enable warn logging of exceptions resolved by a "HandlerExceptionResolver".
+	spring.mvc.log-resolved-exception=false # Whether to enable warn logging of exceptions resolved by a "HandlerExceptionResolver", except for "DefaultHandlerExceptionResolver".
 	spring.mvc.message-codes-resolver-format= # Formatting strategy for message codes. For instance, `PREFIX_ERROR_CODE`.
 	spring.mvc.pathmatch.use-registered-suffix-pattern=false # Whether suffix pattern matching should work only against extensions registered with "spring.mvc.contentnegotiation.media-types.*".
 	spring.mvc.pathmatch.use-suffix-pattern=false # Whether to use suffix pattern match (".*") when matching patterns to requests.
@@ -509,13 +511,16 @@ content into your application. Rather, pick only the properties that you need.
 	spring.thymeleaf.reactive.full-mode-view-names= # Comma-separated list of view names (patterns allowed) that should be executed in FULL mode even if a max chunk size is set.
 	spring.thymeleaf.reactive.max-chunk-size=0B # Maximum size of data buffers used for writing to the response.
 	spring.thymeleaf.reactive.media-types= # Media types supported by the view technology.
+	spring.thymeleaf.render-hidden-markers-before-checkboxes=false # Whether hidden form inputs acting as markers for checkboxes should be rendered before the checkbox element itself.
 	spring.thymeleaf.servlet.content-type=text/html # Content-Type value written to HTTP responses.
+	spring.thymeleaf.servlet.produce-partial-output-while-processing=true # Whether Thymeleaf should start writing partial output as soon as possible or buffer until template processing is finished.
 	spring.thymeleaf.suffix=.html # Suffix that gets appended to view names when building a URL.
 	spring.thymeleaf.template-resolver-order= # Order of the template resolver in the chain.
 	spring.thymeleaf.view-names= # Comma-separated list of view names (patterns allowed) that can be resolved.
 
 	# SPRING WEBFLUX ({sc-spring-boot-autoconfigure}/web/reactive/WebFluxProperties.{sc-ext}[WebFluxProperties])
 	spring.webflux.date-format= # Date format to use. For instance, `dd/MM/yyyy`.
+	spring.webflux.hiddenmethod.filter.enabled=true # Whether to enable Spring's HiddenHttpMethodFilter.
 	spring.webflux.static-path-pattern=/** # Path pattern used for static resources.
 
 	# SPRING WEB SERVICES ({sc-spring-boot-autoconfigure}/webservices/WebServicesProperties.{sc-ext}[WebServicesProperties])
@@ -537,8 +542,7 @@ content into your application. Rather, pick only the properties that you need.
 
 	# SECURITY OAUTH2 CLIENT ({sc-spring-boot-autoconfigure}/security/oauth2/client/OAuth2ClientProperties.{sc-ext}[OAuth2ClientProperties])
 	spring.security.oauth2.client.provider.*= # OAuth provider details.
-	spring.security.oauth2.client.registration.authorization-code.*= # OAuth2 authorization_code client registrations.
-    spring.security.oauth2.client.registration.login.*= # OpenID Connect client registrations.
+	spring.security.oauth2.client.registration.*= # OAuth client registrations.
 
 	# SECURITY OAUTH2 RESOURCE SERVER ({sc-spring-boot-autoconfigure}/security/oauth2/resource/OAuth2ResourceServerProperties.{sc-ext}[OAuth2ResourceServerProperties])
 	spring.security.oauth2.resourceserver.jwt.jwk-set-uri= # JSON Web Key URI to use to verify the JWT token.
@@ -549,47 +553,42 @@ content into your application. Rather, pick only the properties that you need.
 	# ----------------------------------------
 
 	# FLYWAY ({sc-spring-boot-autoconfigure}/flyway/FlywayProperties.{sc-ext}[FlywayProperties])
-	spring.flyway.baseline-description= #
-	spring.flyway.baseline-on-migrate= #
-	spring.flyway.baseline-version=1 # Version to start migration
-	spring.flyway.batch= #
+	spring.flyway.baseline-description=<< Flyway Baseline >> # Description to tag an existing schema with when applying a baseline.
+	spring.flyway.baseline-on-migrate=false # Whether to automatically call baseline when migrating a non-empty schema.
+	spring.flyway.baseline-version=1 # Version to tag an existing schema with when executing baseline.
 	spring.flyway.check-location=true # Whether to check that migration scripts location exists.
-	spring.flyway.clean-disabled= #
-	spring.flyway.clean-on-validation-error= #
-	spring.flyway.dry-run-output= #
+	spring.flyway.clean-disabled=false # Whether to disable cleaning of the database.
+	spring.flyway.clean-on-validation-error=false # Whether to automatically call clean when a validation error occurs.
+	spring.flyway.connect-retries=0 # Maximum number of retries when attempting to connect to the database.
 	spring.flyway.enabled=true # Whether to enable flyway.
-	spring.flyway.error-handlers= #
-	spring.flyway.error-overrides= #
-	spring.flyway.group= #
-	spring.flyway.ignore-ignored-migrations= #
-	spring.flyway.ignore-future-migrations= #
-	spring.flyway.ignore-missing-migrations= #
+	spring.flyway.encoding=UTF-8 # Encoding of SQL migrations.
+	spring.flyway.group=false # Whether to group all pending migrations together in the same transaction when applying them.
+	spring.flyway.ignore-future-migrations=true # Whether to ignore future migrations when reading the schema history table.
+	spring.flyway.ignore-ignored-migrations=false # Whether to ignore ignored migrations when reading the schema history table.
+	spring.flyway.ignore-missing-migrations=false # Whether to ignore missing migrations when reading the schema history table.
+	spring.flyway.ignore-pending-migrations=false # Whether to ignore pending migrations when reading the schema history table.
 	spring.flyway.init-sqls= # SQL statements to execute to initialize a connection immediately after obtaining it.
-	spring.flyway.installed-by= #
-	spring.flyway.locations=classpath:db/migration # The locations of migrations scripts.
-	spring.flyway.mixed= #
-	spring.flyway.oracle-sqlplus= #
-	spring.flyway.out-of-order= #
-	spring.flyway.password= # JDBC password to use if you want Flyway to create its own DataSource.
-	spring.flyway.placeholder-prefix= #
-	spring.flyway.placeholder-replacement= #
-	spring.flyway.placeholder-suffix= #
-	spring.flyway.placeholders.*= #
-	spring.flyway.repeatable-sql-migration-prefix= #
-	spring.flyway.schemas= # Schemas to update.
-	spring.flyway.skip-default-callbacks= #
-	spring.flyway.skip-default-resolvers= #
-	spring.flyway.sql-migration-prefix=V #
-	spring.flyway.sql-migration-separator= #
-	spring.flyway.sql-migration-suffix=.sql #
-	spring.flyway.sql-migration-suffixes= #
-	spring.flyway.stream= #
-	spring.flyway.table= #
-	spring.flyway.target= #
-	spring.flyway.undo-sql-migration-prefix= #
+	spring.flyway.installed-by= # Username recorded in the schema history table as having applied the migration.
+	spring.flyway.locations=classpath:db/migration # Locations of migrations scripts. Can contain the special "{vendor}" placeholder to use vendor-specific locations.
+	spring.flyway.mixed=false # Whether to allow mixing transactional and non-transactional statements within the same migration.
+	spring.flyway.out-of-order=false # Whether to allow migrations to be run out of order.
+	spring.flyway.password= # Login password of the database to migrate.
+	spring.flyway.placeholder-prefix=${ # Prefix of placeholders in migration scripts.
+	spring.flyway.placeholder-replacement=true # Perform placeholder replacement in migration scripts.
+	spring.flyway.placeholder-suffix=} # Suffix of placeholders in migration scripts.
+	spring.flyway.placeholders= # Placeholders and their replacements to apply to sql migration scripts.
+	spring.flyway.repeatable-sql-migration-prefix=R # File name prefix for repeatable SQL migrations.
+	spring.flyway.schemas= # Scheme names managed by Flyway (case-sensitive).
+	spring.flyway.skip-default-callbacks=false # Whether to skip default callbacks. If true, only custom callbacks are used.
+	spring.flyway.skip-default-resolvers=false # Whether to skip default resolvers. If true, only custom resolvers are used.
+	spring.flyway.sql-migration-prefix=V # File name prefix for SQL migrations.
+	spring.flyway.sql-migration-separator=__ # File name separator for SQL migrations.
+	spring.flyway.sql-migration-suffixes=.sql # File name suffix for SQL migrations.
+	spring.flyway.table=flyway_schema_history # Name of the schema schema history table that will be used by Flyway.
+	spring.flyway.target= # Target version up to which migrations should be considered.
 	spring.flyway.url= # JDBC url of the database to migrate. If not set, the primary configured data source is used.
 	spring.flyway.user= # Login user of the database to migrate.
-	spring.flyway.validate-on-migrate= #
+	spring.flyway.validate-on-migrate=true # Whether to automatically call validate when performing a migration.
 
 	# LIQUIBASE ({sc-spring-boot-autoconfigure}/liquibase/LiquibaseProperties.{sc-ext}[LiquibaseProperties])
 	spring.liquibase.change-log=classpath:/db/changelog/db.changelog-master.yaml # Change log configuration path.
@@ -638,6 +637,7 @@ content into your application. Rather, pick only the properties that you need.
 	spring.data.cassandra.consistency-level= # Queries consistency level.
 	spring.data.cassandra.contact-points=localhost # Cluster node addresses.
 	spring.data.cassandra.fetch-size= # Queries default fetch size.
+	spring.data.cassandra.jmx-enabled=false # Whether to enable JMX reporting.
 	spring.data.cassandra.keyspace-name= # Keyspace name to use.
 	spring.data.cassandra.port= # Port of the Cassandra server.
 	spring.data.cassandra.password= # Login password of the server.
@@ -926,7 +926,7 @@ content into your application. Rather, pick only the properties that you need.
 	spring.mongodb.embedded.storage.database-dir= # Directory used for data storage.
 	spring.mongodb.embedded.storage.oplog-size= # Maximum size of the oplog.
 	spring.mongodb.embedded.storage.repl-set-name= # Name of the replica set.
-	spring.mongodb.embedded.version=3.2.2 # Version of Mongo to use.
+	spring.mongodb.embedded.version=3.5.5 # Version of Mongo to use.
 
 	# REDIS ({sc-spring-boot-autoconfigure}/data/redis/RedisProperties.{sc-ext}[RedisProperties])
 	spring.redis.cluster.max-redirects= # Maximum number of redirects to follow when executing commands across the cluster.
@@ -1204,21 +1204,21 @@ content into your application. Rather, pick only the properties that you need.
 	management.server.address= # Network address to which the management endpoints should bind. Requires a custom management.server.port.
 	management.server.port= # Management endpoint HTTP port (uses the same port as the application by default). Configure a different port to use management-specific SSL.
 	management.server.servlet.context-path= # Management endpoint context-path (for instance, `/management`). Requires a custom management.server.port.
-	management.server.ssl.ciphers= # Supported SSL ciphers. Requires a custom management.port.
-	management.server.ssl.client-auth= # Whether client authentication is wanted ("want") or needed ("need"). Requires a trust store. Requires a custom management.server.port.
-	management.server.ssl.enabled= # Whether to enable SSL support. Requires a custom management.server.port.
-	management.server.ssl.enabled-protocols= # Enabled SSL protocols. Requires a custom management.server.port.
-	management.server.ssl.key-alias= # Alias that identifies the key in the key store. Requires a custom management.server.port.
-	management.server.ssl.key-password= # Password used to access the key in the key store. Requires a custom management.server.port.
-	management.server.ssl.key-store= # Path to the key store that holds the SSL certificate (typically a jks file). Requires a custom management.server.port.
-	management.server.ssl.key-store-password= # Password used to access the key store. Requires a custom management.server.port.
-	management.server.ssl.key-store-provider= # Provider for the key store. Requires a custom management.server.port.
-	management.server.ssl.key-store-type= # Type of the key store. Requires a custom management.server.port.
-	management.server.ssl.protocol=TLS # SSL protocol to use. Requires a custom management.server.port.
-	management.server.ssl.trust-store= # Trust store that holds SSL certificates. Requires a custom management.server.port.
-	management.server.ssl.trust-store-password= # Password used to access the trust store. Requires a custom management.server.port.
-	management.server.ssl.trust-store-provider= # Provider for the trust store. Requires a custom management.server.port.
-	management.server.ssl.trust-store-type= # Type of the trust store. Requires a custom management.server.port.
+	management.server.ssl.ciphers= # Supported SSL ciphers.
+	management.server.ssl.client-auth= # Whether client authentication is wanted ("want") or needed ("need"). Requires a trust store.
+	management.server.ssl.enabled=true # Whether to enable SSL support.
+	management.server.ssl.enabled-protocols= # Enabled SSL protocols.
+	management.server.ssl.key-alias= # Alias that identifies the key in the key store.
+	management.server.ssl.key-password= # Password used to access the key in the key store.
+	management.server.ssl.key-store= # Path to the key store that holds the SSL certificate (typically a jks file).
+	management.server.ssl.key-store-password= # Password used to access the key store.
+	management.server.ssl.key-store-provider= # Provider for the key store.
+	management.server.ssl.key-store-type= # Type of the key store.
+	management.server.ssl.protocol=TLS # SSL protocol to use.
+	management.server.ssl.trust-store= # Trust store that holds SSL certificates.
+	management.server.ssl.trust-store-password= # Password used to access the trust store.
+	management.server.ssl.trust-store-provider= # Provider for the trust store.
+	management.server.ssl.trust-store-type= # Type of the trust store.
 
 	# CLOUDFOUNDRY
 	management.cloudfoundry.enabled=true # Whether to enable extended Cloud Foundry actuator endpoints.
@@ -1347,7 +1347,6 @@ content into your application. Rather, pick only the properties that you need.
 	management.health.db.enabled=true # Whether to enable database health check.
 	management.health.cassandra.enabled=true # Whether to enable Cassandra health check.
 	management.health.couchbase.enabled=true # Whether to enable Couchbase health check.
-	management.health.couchbase.timeout=1000ms # Timeout for getting the Bucket information from the server.
 	management.health.defaults.enabled=true # Whether to enable default health indicators.
 	management.health.diskspace.enabled=true # Whether to enable disk space health check.
 	management.health.diskspace.path= # Path used to compute the available disk space.
@@ -1379,10 +1378,21 @@ content into your application. Rather, pick only the properties that you need.
 	management.info.git.mode=simple # Mode to use to expose git information.
 
 	# METRICS
-	management.metrics.distribution.percentiles-histogram.*= # Whether meter IDs starting with the specified name should publish percentile histograms.
+	management.metrics.distribution.maximum-expected-value.*= # Maximum value that meter IDs starting-with the specified name are expected to observe.
+	management.metrics.distribution.minimum-expected-value.*= # Minimum value that meter IDs starting-with the specified name are expected to observe.
 	management.metrics.distribution.percentiles.*= # Specific computed non-aggregable percentiles to ship to the backend for meter IDs starting-with the specified name.
-	management.metrics.distribution.sla.*= # Specific SLA boundaries for meter IDs starting-with the specified name. The longest match wins, the key `all` can also be used to configure all meters.
+	management.metrics.distribution.percentiles-histogram.*= # Whether meter IDs starting with the specified name should publish percentile histograms.
+	management.metrics.distribution.sla.*= # Specific SLA boundaries for meter IDs starting-with the specified name. The longest match wins.
 	management.metrics.enable.*= # Whether meter IDs starting-with the specified name should be enabled. The longest match wins, the key `all` can also be used to configure all meters.
+	management.metrics.export.appoptics.api-token= # AppOptics API token.
+	management.metrics.export.appoptics.batch-size=500 # Number of measurements per request to use for this backend. If more measurements are found, then multiple requests will be made.
+	management.metrics.export.appoptics.connect-timeout=5s # Connection timeout for requests to this backend.
+	management.metrics.export.appoptics.enabled=true # Whether exporting of metrics to this backend is enabled.
+	management.metrics.export.appoptics.host-tag=instance # Tag that will be mapped to "@host" when shipping metrics to AppOptics.
+	management.metrics.export.appoptics.num-threads=2 # Number of threads to use with the metrics publishing scheduler.
+	management.metrics.export.appoptics.read-timeout=10s # Read timeout for requests to this backend.
+	management.metrics.export.appoptics.step=1m # Step size (i.e. reporting frequency) to use.
+	management.metrics.export.appoptics.uri=https://api.appoptics.com/v1/measurements # URI to ship metrics to.
 	management.metrics.export.atlas.batch-size=10000 # Number of measurements per request to use for this backend. If more measurements are found, then multiple requests will be made.
 	management.metrics.export.atlas.config-refresh-frequency=10s # Frequency for refreshing config settings from the LWC service.
 	management.metrics.export.atlas.config-time-to-live=150s # Time to live for subscriptions from the LWC service.
@@ -1421,7 +1431,7 @@ content into your application. Rather, pick only the properties that you need.
 	management.metrics.export.elastic.batch-size=10000 # Number of measurements per request to use for this backend. If more measurements are found, then multiple requests will be made.
 	management.metrics.export.elastic.connect-timeout=1s # Connection timeout for requests to this backend.
 	management.metrics.export.elastic.enabled=true # Whether exporting of metrics to this backend is enabled.
-	management.metrics.export.elastic.hosts=http://localhost:9200 # Hosts to export metrics to.
+	management.metrics.export.elastic.host=http://localhost:9200 # Host to export metrics to.
 	management.metrics.export.elastic.index=metrics # Index to export metrics to.
 	management.metrics.export.elastic.index-date-format=yyyy-MM # Index date format used for rolling indices. Appended to the index name, preceded by a '-'.
 	management.metrics.export.elastic.num-threads=2 # Number of threads to use with the metrics publishing scheduler.
@@ -1447,6 +1457,16 @@ content into your application. Rather, pick only the properties that you need.
 	management.metrics.export.graphite.rate-units=seconds # Base time unit used to report rates.
 	management.metrics.export.graphite.step=1m # Step size (i.e. reporting frequency) to use.
 	management.metrics.export.graphite.tags-as-prefix= # For the default naming convention, turn the specified tag keys into part of the metric prefix.
+	management.metrics.export.humio.api-token= # Humio API token.
+	management.metrics.export.humio.batch-size=10000 # Number of measurements per request to use for this backend. If more measurements are found, then multiple requests will be made.
+	management.metrics.export.humio.connect-timeout=5s # Connection timeout for requests to this backend.
+	management.metrics.export.humio.enabled=true # Whether exporting of metrics to this backend is enabled.
+	management.metrics.export.humio.num-threads=2 # Number of threads to use with the metrics publishing scheduler.
+	management.metrics.export.humio.read-timeout=10s # Read timeout for requests to this backend.
+	management.metrics.export.humio.repository=sandbox # Name of the repository to publish metrics to.
+	management.metrics.export.humio.step=1m # Step size (i.e. reporting frequency) to use.
+	management.metrics.export.humio.tags.*= # Humio tags describing the data source in which metrics will be stored. Humio tags are a distinct concept from Micrometer's tags. Micrometer's tags are used to divide metrics along dimensional boundaries.
+	management.metrics.export.humio.uri=https://cloud.humio.com # URI to ship metrics to. If you need to publish metrics to an internal proxy en-route to Humio, you can define the location of the proxy with this.
 	management.metrics.export.influx.auto-create-db=true # Whether to create the Influx database if it does not exist before attempting to publish metrics to it.
 	management.metrics.export.influx.batch-size=10000 # Number of measurements per request to use for this backend. If more measurements are found, then multiple requests will be made.
 	management.metrics.export.influx.compressed=true # Whether to enable GZIP compression of metrics batches published to Influx.
@@ -1467,6 +1487,15 @@ content into your application. Rather, pick only the properties that you need.
 	management.metrics.export.jmx.domain=metrics # Metrics JMX domain name.
 	management.metrics.export.jmx.enabled=true # Whether exporting of metrics to JMX is enabled.
 	management.metrics.export.jmx.step=1m # Step size (i.e. reporting frequency) to use.
+	management.metrics.export.kairos.batch-size=10000 # Number of measurements per request to use for this backend. If more measurements are found, then multiple requests will be made.
+	management.metrics.export.kairos.connect-timeout=1s # Connection timeout for requests to this backend.
+	management.metrics.export.kairos.enabled=true # Whether exporting of metrics to this backend is enabled.
+	management.metrics.export.kairos.num-threads=2 # Number of threads to use with the metrics publishing scheduler.
+	management.metrics.export.kairos.password= # Login password of the KairosDB server.
+	management.metrics.export.kairos.read-timeout=10s # Read timeout for requests to this backend.
+	management.metrics.export.kairos.step=1m # Step size (i.e. reporting frequency) to use.
+	management.metrics.export.kairos.uri= http://localhost:8080/api/v1/datapoints # URI of the KairosDB server.
+	management.metrics.export.kairos.user-name= # Login user of the KairosDB server.
 	management.metrics.export.newrelic.account-id= # New Relic account ID.
 	management.metrics.export.newrelic.api-key= # New Relic API key.
 	management.metrics.export.newrelic.batch-size=10000 # Number of measurements per request to use for this backend. If more measurements are found, then multiple requests will be made.
@@ -1479,6 +1508,12 @@ content into your application. Rather, pick only the properties that you need.
 	management.metrics.export.prometheus.descriptions=true # Whether to enable publishing descriptions as part of the scrape payload to Prometheus. Turn this off to minimize the amount of data sent on each scrape.
 	management.metrics.export.prometheus.enabled=true # Whether exporting of metrics to Prometheus is enabled.
 	management.metrics.export.prometheus.step=1m # Step size (i.e. reporting frequency) to use.
+	management.metrics.export.prometheus.pushgateway.base-url=localhost:9091 # Base URL for the Pushgateway.
+	management.metrics.export.prometheus.pushgateway.enabled=false # Enable publishing via a Prometheus Pushgateway.
+	management.metrics.export.prometheus.pushgateway.grouping-key= # Grouping key for the pushed metrics.
+	management.metrics.export.prometheus.pushgateway.job= # Job identifier for this application instance.
+	management.metrics.export.prometheus.pushgateway.push-rate=1m # Frequency with which to push metrics.
+	management.metrics.export.prometheus.pushgateway.shutdown-operation= # Operation that should be performed on shutdown.
 	management.metrics.export.signalfx.access-token= # SignalFX access token.
 	management.metrics.export.signalfx.batch-size=10000 # Number of measurements per request to use for this backend. If more measurements are found, then multiple requests will be made.
 	management.metrics.export.signalfx.connect-timeout=1s # Connection timeout for requests to this backend.
@@ -1512,7 +1547,7 @@ content into your application. Rather, pick only the properties that you need.
 	management.metrics.tags.*= # Common tags that are applied to every meter.
 	management.metrics.web.client.max-uri-tags=100 # Maximum number of unique URI tag values allowed. After the max number of tag values is reached, metrics with additional tag values are denied by filter.
 	management.metrics.web.client.requests-metric-name=http.client.requests # Name of the metric for sent requests.
-	management.metrics.web.server.auto-time-requests=true # Whether requests handled by Spring MVC or WebFlux should be automatically timed.
+	management.metrics.web.server.auto-time-requests=true # Whether requests handled by Spring MVC, WebFlux or Jersey should be automatically timed.
 	management.metrics.web.server.max-uri-tags=100 # Maximum number of unique URI tag values allowed. After the max number of tag values is reached, metrics with additional tag values are denied by filter.
 	management.metrics.web.server.requests-metric-name=http.server.requests # Name of the metric for received requests.
 

@@ -18,7 +18,6 @@ package org.springframework.boot.autoconfigure.web.reactive;
 
 import java.time.Duration;
 import java.util.Collection;
-import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -30,6 +29,7 @@ import org.springframework.boot.autoconfigure.AutoConfigureOrder;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
 import org.springframework.boot.autoconfigure.http.codec.CodecsAutoConfiguration;
 import org.springframework.boot.autoconfigure.validation.ValidationAutoConfiguration;
@@ -49,7 +49,6 @@ import org.springframework.core.convert.converter.GenericConverter;
 import org.springframework.format.Formatter;
 import org.springframework.format.FormatterRegistry;
 import org.springframework.format.support.FormattingConversionService;
-import org.springframework.http.CacheControl;
 import org.springframework.http.codec.ServerCodecConfigurer;
 import org.springframework.util.ClassUtils;
 import org.springframework.validation.Validator;
@@ -90,6 +89,7 @@ public class WebFluxAutoConfiguration {
 
 	@Bean
 	@ConditionalOnMissingBean(HiddenHttpMethodFilter.class)
+	@ConditionalOnProperty(prefix = "spring.webflux.hiddenmethod.filter", name = "enabled", matchIfMissing = true)
 	public OrderedHiddenHttpMethodFilter hiddenHttpMethodFilter() {
 		return new OrderedHiddenHttpMethodFilter();
 	}
@@ -148,15 +148,11 @@ public class WebFluxAutoConfiguration {
 				logger.debug("Default resource handling disabled");
 				return;
 			}
-			Duration cachePeriod = this.resourceProperties.getCache().getPeriod();
 			if (!registry.hasMappingForPattern("/webjars/**")) {
 				ResourceHandlerRegistration registration = registry
 						.addResourceHandler("/webjars/**")
 						.addResourceLocations("classpath:/META-INF/resources/webjars/");
-				if (cachePeriod != null) {
-					registration.setCacheControl(CacheControl
-							.maxAge(cachePeriod.toMillis(), TimeUnit.MILLISECONDS));
-				}
+				configureResourceCaching(registration);
 				customizeResourceHandlerRegistration(registration);
 			}
 			String staticPathPattern = this.webFluxProperties.getStaticPathPattern();
@@ -164,12 +160,19 @@ public class WebFluxAutoConfiguration {
 				ResourceHandlerRegistration registration = registry
 						.addResourceHandler(staticPathPattern).addResourceLocations(
 								this.resourceProperties.getStaticLocations());
-				if (cachePeriod != null) {
-					registration.setCacheControl(CacheControl
-							.maxAge(cachePeriod.toMillis(), TimeUnit.MILLISECONDS));
-				}
+				configureResourceCaching(registration);
 				customizeResourceHandlerRegistration(registration);
 			}
+		}
+
+		private void configureResourceCaching(ResourceHandlerRegistration registration) {
+			Duration cachePeriod = this.resourceProperties.getCache().getPeriod();
+			ResourceProperties.Cache.Cachecontrol cacheControl = this.resourceProperties
+					.getCache().getCachecontrol();
+			if (cachePeriod != null && cacheControl.getMaxAge() == null) {
+				cacheControl.setMaxAge(cachePeriod);
+			}
+			registration.setCacheControl(cacheControl.toHttpCacheControl());
 		}
 
 		@Override

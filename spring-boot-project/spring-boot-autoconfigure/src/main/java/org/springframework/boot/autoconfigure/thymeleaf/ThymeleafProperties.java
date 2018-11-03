@@ -102,6 +102,12 @@ public class ThymeleafProperties {
 	private boolean enableSpringElCompiler;
 
 	/**
+	 * Whether hidden form inputs acting as markers for checkboxes should be rendered
+	 * before the checkbox element itself.
+	 */
+	private boolean renderHiddenMarkersBeforeCheckboxes = false;
+
+	/**
 	 * Whether to enable Thymeleaf view resolution for Web frameworks.
 	 */
 	private boolean enabled = true;
@@ -206,6 +212,15 @@ public class ThymeleafProperties {
 		this.enableSpringElCompiler = enableSpringElCompiler;
 	}
 
+	public boolean isRenderHiddenMarkersBeforeCheckboxes() {
+		return this.renderHiddenMarkersBeforeCheckboxes;
+	}
+
+	public void setRenderHiddenMarkersBeforeCheckboxes(
+			boolean renderHiddenMarkersBeforeCheckboxes) {
+		this.renderHiddenMarkersBeforeCheckboxes = renderHiddenMarkersBeforeCheckboxes;
+	}
+
 	public Reactive getReactive() {
 		return this.reactive;
 	}
@@ -221,12 +236,27 @@ public class ThymeleafProperties {
 		 */
 		private MimeType contentType = MimeType.valueOf("text/html");
 
+		/**
+		 * Whether Thymeleaf should start writing partial output as soon as possible or
+		 * buffer until template processing is finished.
+		 */
+		private boolean producePartialOutputWhileProcessing = true;
+
 		public MimeType getContentType() {
 			return this.contentType;
 		}
 
 		public void setContentType(MimeType contentType) {
 			this.contentType = contentType;
+		}
+
+		public boolean isProducePartialOutputWhileProcessing() {
+			return this.producePartialOutputWhileProcessing;
+		}
+
+		public void setProducePartialOutputWhileProcessing(
+				boolean producePartialOutputWhileProcessing) {
+			this.producePartialOutputWhileProcessing = producePartialOutputWhileProcessing;
 		}
 
 	}
