@@ -1,11 +1,11 @@
 /*
- * Copyright 2012-2018 the original author or authors.
+ * Copyright 2012-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -34,7 +34,6 @@ import io.micrometer.core.instrument.Timer;
 import io.micrometer.core.instrument.Timer.Builder;
 import io.micrometer.core.instrument.Timer.Sample;
 
-import org.springframework.context.ApplicationContext;
 import org.springframework.core.annotation.AnnotationUtils;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.filter.OncePerRequestFilter;
@@ -60,23 +59,6 @@ public class WebMvcMetricsFilter extends OncePerRequestFilter {
 	private final String metricName;
 
 	private final boolean autoTimeRequests;
-
-	/**
-	 * Create a new {@link WebMvcMetricsFilter} instance.
-	 * @param context the source application context
-	 * @param registry the meter registry
-	 * @param tagsProvider the tags provider
-	 * @param metricName the metric name
-	 * @param autoTimeRequests if requests should be automatically timed
-	 * @deprecated since 2.0.7 in favor of
-	 * {@link #WebMvcMetricsFilter(MeterRegistry, WebMvcTagsProvider, String, boolean)}
-	 */
-	@Deprecated
-	public WebMvcMetricsFilter(ApplicationContext context, MeterRegistry registry,
-			WebMvcTagsProvider tagsProvider, String metricName,
-			boolean autoTimeRequests) {
-		this(registry, tagsProvider, metricName, autoTimeRequests);
-	}
 
 	/**
 	 * Create a new {@link WebMvcMetricsFilter} instance.
@@ -128,6 +110,10 @@ public class WebMvcMetricsFilter extends OncePerRequestFilter {
 		catch (NestedServletException ex) {
 			response.setStatus(HttpStatus.INTERNAL_SERVER_ERROR.value());
 			record(timingContext, response, request, ex.getCause());
+			throw ex;
+		}
+		catch (ServletException | IOException | RuntimeException ex) {
+			record(timingContext, response, request, ex);
 			throw ex;
 		}
 	}

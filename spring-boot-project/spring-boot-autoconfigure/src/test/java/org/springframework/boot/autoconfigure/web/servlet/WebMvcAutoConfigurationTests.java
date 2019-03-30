@@ -1,11 +1,11 @@
 /*
- * Copyright 2012-2018 the original author or authors.
+ * Copyright 2012-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -45,6 +45,7 @@ import org.springframework.boot.test.context.assertj.AssertableWebApplicationCon
 import org.springframework.boot.test.context.runner.ContextConsumer;
 import org.springframework.boot.test.context.runner.WebApplicationContextRunner;
 import org.springframework.boot.web.server.WebServerFactoryCustomizerBeanPostProcessor;
+import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.boot.web.servlet.filter.OrderedFormContentFilter;
 import org.springframework.boot.web.servlet.server.ServletWebServerFactory;
 import org.springframework.context.ApplicationContext;
@@ -73,6 +74,7 @@ import org.springframework.web.bind.support.ConfigurableWebBindingInitializer;
 import org.springframework.web.context.request.ServletWebRequest;
 import org.springframework.web.filter.FormContentFilter;
 import org.springframework.web.filter.HiddenHttpMethodFilter;
+import org.springframework.web.filter.RequestContextFilter;
 import org.springframework.web.servlet.HandlerAdapter;
 import org.springframework.web.servlet.HandlerExceptionResolver;
 import org.springframework.web.servlet.HandlerMapping;
@@ -135,7 +137,7 @@ public class WebMvcAutoConfigurationTests {
 	@Test
 	public void handlerAdaptersCreated() {
 		this.contextRunner.run((context) -> {
-			assertThat(context).getBeans(HandlerAdapter.class).hasSize(3);
+			assertThat(context).getBeans(HandlerAdapter.class).hasSize(4);
 			assertThat(context.getBean(RequestMappingHandlerAdapter.class)
 					.getMessageConverters()).isNotEmpty().isEqualTo(
 							context.getBean(HttpMessageConverters.class).getConverters());
@@ -145,7 +147,7 @@ public class WebMvcAutoConfigurationTests {
 	@Test
 	public void handlerMappingsCreated() {
 		this.contextRunner.run((context) -> assertThat(context)
-				.getBeans(HandlerMapping.class).hasSize(5));
+				.getBeans(HandlerMapping.class).hasSize(6));
 	}
 
 	@Test
@@ -913,6 +915,33 @@ public class WebMvcAutoConfigurationTests {
 		assertThat(mediaTypes).containsOnly(MediaType.ALL);
 	}
 
+	@Test
+	public void requestContextFilterIsAutoConfigured() {
+		this.contextRunner.run((context) -> assertThat(context)
+				.hasSingleBean(RequestContextFilter.class));
+	}
+
+	@Test
+	public void whenUserDefinesARequestContextFilterTheAutoConfiguredRegistrationBacksOff() {
+		this.contextRunner.withUserConfiguration(RequestContextFilterConfiguration.class)
+				.run((context) -> {
+					assertThat(context).hasSingleBean(RequestContextFilter.class);
+					assertThat(context).hasBean("customRequestContextFilter");
+				});
+	}
+
+	@Test
+	public void whenUserDefinesARequestContextFilterRegistrationTheAutoConfiguredFilterBacksOff() {
+		this.contextRunner
+				.withUserConfiguration(
+						RequestContextFilterRegistrationConfiguration.class)
+				.run((context) -> {
+					assertThat(context).hasSingleBean(FilterRegistrationBean.class);
+					assertThat(context).hasBean("customRequestContextFilterRegistration");
+					assertThat(context).doesNotHaveBean(RequestContextFilter.class);
+				});
+	}
+
 	private void assertCacheControl(AssertableWebApplicationContext context) {
 		Map<String, Object> handlerMap = getHandlerMap(
 				context.getBean("resourceHandlerMapping", HandlerMapping.class));
@@ -974,7 +1003,7 @@ public class WebMvcAutoConfigurationTests {
 		return Collections.emptyMap();
 	}
 
-	@Configuration
+	@Configuration(proxyBeanMethods = false)
 	protected static class ViewConfig {
 
 		@Bean
@@ -993,7 +1022,7 @@ public class WebMvcAutoConfigurationTests {
 
 	}
 
-	@Configuration
+	@Configuration(proxyBeanMethods = false)
 	protected static class WebJars implements WebMvcConfigurer {
 
 		@Override
@@ -1004,7 +1033,7 @@ public class WebMvcAutoConfigurationTests {
 
 	}
 
-	@Configuration
+	@Configuration(proxyBeanMethods = false)
 	protected static class AllResources implements WebMvcConfigurer {
 
 		@Override
@@ -1014,7 +1043,7 @@ public class WebMvcAutoConfigurationTests {
 
 	}
 
-	@Configuration
+	@Configuration(proxyBeanMethods = false)
 	public static class Config {
 
 		@Bean
@@ -1029,7 +1058,7 @@ public class WebMvcAutoConfigurationTests {
 
 	}
 
-	@Configuration
+	@Configuration(proxyBeanMethods = false)
 	public static class CustomViewResolver {
 
 		@Bean
@@ -1039,7 +1068,7 @@ public class WebMvcAutoConfigurationTests {
 
 	}
 
-	@Configuration
+	@Configuration(proxyBeanMethods = false)
 	public static class CustomContentNegotiatingViewResolver {
 
 		@Bean
@@ -1058,7 +1087,7 @@ public class WebMvcAutoConfigurationTests {
 
 	}
 
-	@Configuration
+	@Configuration(proxyBeanMethods = false)
 	static class CustomConfigurableWebBindingInitializer {
 
 		@Bean
@@ -1074,7 +1103,7 @@ public class WebMvcAutoConfigurationTests {
 
 	}
 
-	@Configuration
+	@Configuration(proxyBeanMethods = false)
 	static class CustomFormContentFilter {
 
 		@Bean
@@ -1084,7 +1113,7 @@ public class WebMvcAutoConfigurationTests {
 
 	}
 
-	@Configuration
+	@Configuration(proxyBeanMethods = false)
 	static class CustomRequestMappingHandlerMapping {
 
 		@Bean
@@ -1106,7 +1135,7 @@ public class WebMvcAutoConfigurationTests {
 
 	}
 
-	@Configuration
+	@Configuration(proxyBeanMethods = false)
 	static class CustomRequestMappingHandlerAdapter {
 
 		@Bean
@@ -1128,14 +1157,14 @@ public class WebMvcAutoConfigurationTests {
 
 	}
 
-	@Configuration
+	@Configuration(proxyBeanMethods = false)
 	@Import({ CustomRequestMappingHandlerMapping.class,
 			CustomRequestMappingHandlerAdapter.class })
 	static class MultipleWebMvcRegistrations {
 
 	}
 
-	@Configuration
+	@Configuration(proxyBeanMethods = false)
 	protected static class MvcValidator implements WebMvcConfigurer {
 
 		private final Validator validator = mock(Validator.class);
@@ -1147,7 +1176,7 @@ public class WebMvcAutoConfigurationTests {
 
 	}
 
-	@Configuration
+	@Configuration(proxyBeanMethods = false)
 	protected static class MvcJsr303Validator implements WebMvcConfigurer {
 
 		private final LocalValidatorFactoryBean validator = new LocalValidatorFactoryBean();
@@ -1159,7 +1188,7 @@ public class WebMvcAutoConfigurationTests {
 
 	}
 
-	@Configuration
+	@Configuration(proxyBeanMethods = false)
 	static class CustomJsr303Validator {
 
 		@Bean
@@ -1169,7 +1198,7 @@ public class WebMvcAutoConfigurationTests {
 
 	}
 
-	@Configuration
+	@Configuration(proxyBeanMethods = false)
 	static class CustomSpringValidator {
 
 		@Bean
@@ -1179,7 +1208,7 @@ public class WebMvcAutoConfigurationTests {
 
 	}
 
-	@Configuration
+	@Configuration(proxyBeanMethods = false)
 	static class CustomHttpMessageConverter {
 
 		@Bean
@@ -1190,7 +1219,7 @@ public class WebMvcAutoConfigurationTests {
 
 	}
 
-	@Configuration
+	@Configuration(proxyBeanMethods = false)
 	static class CustomConfigurer implements WebMvcConfigurer {
 
 		@Override
@@ -1200,7 +1229,7 @@ public class WebMvcAutoConfigurationTests {
 
 	}
 
-	@Configuration
+	@Configuration(proxyBeanMethods = false)
 	static class CustomApplicationTaskExecutorConfig {
 
 		@Bean
@@ -1210,7 +1239,7 @@ public class WebMvcAutoConfigurationTests {
 
 	}
 
-	@Configuration
+	@Configuration(proxyBeanMethods = false)
 	static class CustomAsyncTaskExecutorConfig {
 
 		@Bean
@@ -1220,7 +1249,7 @@ public class WebMvcAutoConfigurationTests {
 
 	}
 
-	@Configuration
+	@Configuration(proxyBeanMethods = false)
 	static class CustomAsyncTaskExecutorConfigurer implements WebMvcConfigurer {
 
 		private final AsyncTaskExecutor taskExecutor = mock(AsyncTaskExecutor.class);
@@ -1228,6 +1257,26 @@ public class WebMvcAutoConfigurationTests {
 		@Override
 		public void configureAsyncSupport(AsyncSupportConfigurer configurer) {
 			configurer.setTaskExecutor(this.taskExecutor);
+		}
+
+	}
+
+	@Configuration(proxyBeanMethods = false)
+	static class RequestContextFilterConfiguration {
+
+		@Bean
+		public RequestContextFilter customRequestContextFilter() {
+			return new RequestContextFilter();
+		}
+
+	}
+
+	@Configuration(proxyBeanMethods = false)
+	static class RequestContextFilterRegistrationConfiguration {
+
+		@Bean
+		public FilterRegistrationBean<RequestContextFilter> customRequestContextFilterRegistration() {
+			return new FilterRegistrationBean<>(new RequestContextFilter());
 		}
 
 	}

@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -61,7 +61,7 @@ public class ReactiveCloudFoundrySecurityInterceptorTests {
 	@Test
 	public void preHandleWhenRequestIsPreFlightShouldBeOk() {
 		MockServerWebExchange request = MockServerWebExchange.from(MockServerHttpRequest
-				.options("/a").header(HttpHeaders.ORIGIN, "http://example.com")
+				.options("/a").header(HttpHeaders.ORIGIN, "https://example.com")
 				.header(HttpHeaders.ACCESS_CONTROL_REQUEST_METHOD, "GET").build());
 		StepVerifier.create(this.interceptor.preHandle(request, "/a")).consumeNextWith(
 				(response) -> assertThat(response.getStatus()).isEqualTo(HttpStatus.OK))

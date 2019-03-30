@@ -1,11 +1,11 @@
 /*
- * Copyright 2012-2018 the original author or authors.
+ * Copyright 2012-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,6 +18,7 @@ package org.springframework.boot.web.embedded.tomcat;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
@@ -26,10 +27,17 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
 
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
+import javax.servlet.MultipartConfigElement;
+import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
+import javax.servlet.ServletRegistration.Dynamic;
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 
 import org.apache.catalina.Container;
 import org.apache.catalina.Context;
@@ -58,14 +66,24 @@ import org.mockito.InOrder;
 
 import org.springframework.boot.testsupport.rule.OutputCapture;
 import org.springframework.boot.web.server.WebServerException;
+import org.springframework.boot.web.servlet.ServletContextInitializer;
 import org.springframework.boot.web.servlet.server.AbstractServletWebServerFactory;
 import org.springframework.boot.web.servlet.server.AbstractServletWebServerFactoryTests;
+import org.springframework.core.io.ByteArrayResource;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.test.util.ReflectionTestUtils;
+import org.springframework.util.FileSystemUtils;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
+import org.springframework.web.client.RestTemplate;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.assertj.core.api.Assertions.assertThatIllegalArgumentException;
-import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
@@ -277,19 +295,14 @@ public class TomcatServletWebServerFactoryTests
 	}
 
 	@Test
-	public void primaryConnectorPortClashThrowsIllegalStateException()
-			throws IOException {
+	public void primaryConnectorPortClashThrowsWebServerException() throws IOException {
 		doWithBlockedPort((port) -> {
 			TomcatServletWebServerFactory factory = getFactory();
 			factory.setPort(port);
-			try {
+			assertThatExceptionOfType(WebServerException.class).isThrownBy(() -> {
 				this.webServer = factory.getWebServer();
 				this.webServer.start();
-				fail();
-			}
-			catch (WebServerException ex) {
-				// Ignore
-			}
+			});
 		});
 	}
 
@@ -449,6 +462,60 @@ public class TomcatServletWebServerFactoryTests
 		this.webServer = factory.getWebServer((context) -> context
 				.addServlet("failing", FailingServlet.class).setLoadOnStartup(0));
 		this.webServer.start();
+	}
+
+	@Test
+	public void referenceClearingIsDisabled() {
+		TomcatServletWebServerFactory factory = getFactory();
+		this.webServer = factory.getWebServer();
+		this.webServer.start();
+		Tomcat tomcat = ((TomcatWebServer) this.webServer).getTomcat();
+		StandardContext context = (StandardContext) tomcat.getHost().findChildren()[0];
+		assertThat(context.getClearReferencesObjectStreamClassCaches()).isFalse();
+		assertThat(context.getClearReferencesRmiTargets()).isFalse();
+		assertThat(context.getClearReferencesThreadLocals()).isFalse();
+	}
+
+	@Test
+	public void nonExistentUploadDirectoryIsCreatedUponMultipartUpload()
+			throws IOException, URISyntaxException {
+		TomcatServletWebServerFactory factory = new TomcatServletWebServerFactory(0);
+		AtomicReference<ServletContext> servletContextReference = new AtomicReference<>();
+		factory.addInitializers(new ServletContextInitializer() {
+
+			@Override
+			public void onStartup(ServletContext servletContext) throws ServletException {
+				servletContextReference.set(servletContext);
+				Dynamic servlet = servletContext.addServlet("upload", new HttpServlet() {
+
+					@Override
+					protected void doPost(HttpServletRequest req,
+							HttpServletResponse resp)
+							throws ServletException, IOException {
+						req.getParts();
+					}
+
+				});
+				servlet.addMapping("/upload");
+				servlet.setMultipartConfig(new MultipartConfigElement((String) null));
+			}
+
+		});
+		this.webServer = factory.getWebServer();
+		this.webServer.start();
+		File temp = (File) servletContextReference.get()
+				.getAttribute(ServletContext.TEMPDIR);
+		FileSystemUtils.deleteRecursively(temp);
+		RestTemplate restTemplate = new RestTemplate();
+		HttpHeaders headers = new HttpHeaders();
+		MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
+		body.add("file", new ByteArrayResource(new byte[1024 * 1024]));
+		headers.setContentType(MediaType.MULTIPART_FORM_DATA);
+		HttpEntity<MultiValueMap<String, Object>> requestEntity = new HttpEntity<>(body,
+				headers);
+		ResponseEntity<String> response = restTemplate
+				.postForEntity(getLocalUrl("/upload"), requestEntity, String.class);
+		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
 	}
 
 	@Override

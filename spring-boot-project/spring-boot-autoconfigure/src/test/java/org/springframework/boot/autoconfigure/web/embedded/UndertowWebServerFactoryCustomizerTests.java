@@ -1,11 +1,11 @@
 /*
- * Copyright 2012-2018 the original author or authors.
+ * Copyright 2012-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -47,6 +47,7 @@ import static org.mockito.Mockito.verify;
  *
  * @author Brian Clozel
  * @author Phillip Webb
+ * @author Artsiom Yudovin
  */
 public class UndertowWebServerFactoryCustomizerTests {
 
@@ -141,6 +142,18 @@ public class UndertowWebServerFactoryCustomizerTests {
 		OptionMap map = ((OptionMap.Builder) ReflectionTestUtils.getField(builder,
 				"serverOptions")).getMap();
 		assertThat(map.contains(UndertowOptions.MAX_HEADER_SIZE)).isFalse();
+	}
+
+	@Test
+	public void customConnectionTimeout() {
+		bind("server.connection-timeout=100");
+		Builder builder = Undertow.builder();
+		ConfigurableUndertowWebServerFactory factory = mockFactory(builder);
+		this.customizer.customize(factory);
+		OptionMap map = ((OptionMap.Builder) ReflectionTestUtils.getField(builder,
+				"serverOptions")).getMap();
+		assertThat(map.contains(UndertowOptions.NO_REQUEST_TIMEOUT)).isTrue();
+		assertThat(map.get(UndertowOptions.NO_REQUEST_TIMEOUT)).isEqualTo(100);
 	}
 
 	private ConfigurableUndertowWebServerFactory mockFactory(Builder builder) {

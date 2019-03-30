@@ -1,11 +1,11 @@
 /*
- * Copyright 2012-2018 the original author or authors.
+ * Copyright 2012-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,12 +16,10 @@
 
 package org.springframework.boot.actuate.autoconfigure.health;
 
-import java.util.Collections;
 import java.util.Map;
 
 import reactor.core.publisher.Flux;
 
-import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.actuate.health.ApplicationHealthIndicator;
 import org.springframework.boot.actuate.health.HealthAggregator;
 import org.springframework.boot.actuate.health.HealthIndicator;
@@ -47,15 +45,9 @@ import org.springframework.context.annotation.Configuration;
  * @author Vedran Pavic
  * @since 2.0.0
  */
-@Configuration
+@Configuration(proxyBeanMethods = false)
 @EnableConfigurationProperties({ HealthIndicatorProperties.class })
 public class HealthIndicatorAutoConfiguration {
-
-	private final HealthIndicatorProperties properties;
-
-	public HealthIndicatorAutoConfiguration(HealthIndicatorProperties properties) {
-		this.properties = properties;
-	}
 
 	@Bean
 	@ConditionalOnMissingBean({ HealthIndicator.class, ReactiveHealthIndicator.class })
@@ -65,10 +57,11 @@ public class HealthIndicatorAutoConfiguration {
 
 	@Bean
 	@ConditionalOnMissingBean(HealthAggregator.class)
-	public OrderedHealthAggregator healthAggregator() {
+	public OrderedHealthAggregator healthAggregator(
+			HealthIndicatorProperties properties) {
 		OrderedHealthAggregator healthAggregator = new OrderedHealthAggregator();
-		if (this.properties.getOrder() != null) {
-			healthAggregator.setStatusOrder(this.properties.getOrder());
+		if (properties.getOrder() != null) {
+			healthAggregator.setStatusOrder(properties.getOrder());
 		}
 		return healthAggregator;
 	}
@@ -80,20 +73,18 @@ public class HealthIndicatorAutoConfiguration {
 		return HealthIndicatorRegistryBeans.get(applicationContext);
 	}
 
-	@Configuration
+	@Configuration(proxyBeanMethods = false)
 	@ConditionalOnClass(Flux.class)
 	static class ReactiveHealthIndicatorConfiguration {
 
 		@Bean
 		@ConditionalOnMissingBean
 		public ReactiveHealthIndicatorRegistry reactiveHealthIndicatorRegistry(
-				ObjectProvider<Map<String, ReactiveHealthIndicator>> reactiveHealthIndicators,
-				ObjectProvider<Map<String, HealthIndicator>> healthIndicators) {
+				Map<String, ReactiveHealthIndicator> reactiveHealthIndicators,
+				Map<String, HealthIndicator> healthIndicators) {
 			return new ReactiveHealthIndicatorRegistryFactory()
-					.createReactiveHealthIndicatorRegistry(
-							reactiveHealthIndicators
-									.getIfAvailable(Collections::emptyMap),
-							healthIndicators.getIfAvailable(Collections::emptyMap));
+					.createReactiveHealthIndicatorRegistry(reactiveHealthIndicators,
+							healthIndicators);
 		}
 
 	}

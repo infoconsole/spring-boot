@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -22,6 +22,7 @@ import java.util.EnumSet;
 import java.util.stream.Collectors;
 
 import com.mongodb.MongoClient;
+import de.flapdoodle.embed.mongo.MongodExecutable;
 import de.flapdoodle.embed.mongo.config.IMongodConfig;
 import de.flapdoodle.embed.mongo.config.Storage;
 import de.flapdoodle.embed.mongo.distribution.Feature;
@@ -192,6 +193,13 @@ public class EmbeddedMongoAutoConfigurationTests {
 		assertThat(downloadConfig.getUserAgent()).isEqualTo("Test User Agent");
 	}
 
+	@Test
+	public void shutdownHookIsNotRegistered() {
+		load();
+		assertThat(this.context.getBean(MongodExecutable.class).isRegisteredJobKiller())
+				.isFalse();
+	}
+
 	private void assertVersionConfiguration(String configuredVersion,
 			String expectedVersion) {
 		this.context = new AnnotationConfigApplicationContext();
@@ -229,7 +237,7 @@ public class EmbeddedMongoAutoConfigurationTests {
 		return File.separatorChar == '\\';
 	}
 
-	@Configuration
+	@Configuration(proxyBeanMethods = false)
 	static class MongoClientConfiguration {
 
 		@Bean
@@ -239,14 +247,13 @@ public class EmbeddedMongoAutoConfigurationTests {
 
 	}
 
-	@Configuration
+	@Configuration(proxyBeanMethods = false)
 	static class DownloadConfigBuilderCustomizerConfiguration {
 
 		@Bean
 		public DownloadConfigBuilderCustomizer testDownloadConfigBuilderCustomizer() {
-			return (downloadConfigBuilder) -> {
-				downloadConfigBuilder.userAgent("Test User Agent");
-			};
+			return (downloadConfigBuilder) -> downloadConfigBuilder
+					.userAgent("Test User Agent");
 		}
 
 	}

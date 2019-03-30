@@ -1,11 +1,11 @@
 /*
- * Copyright 2012-2018 the original author or authors.
+ * Copyright 2012-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -17,7 +17,6 @@
 package org.springframework.boot.autoconfigure.web.servlet.error;
 
 import java.util.Date;
-import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -81,7 +80,7 @@ import org.springframework.web.util.HtmlUtils;
  * @author Stephane Nicoll
  * @author Brian Clozel
  */
-@Configuration
+@Configuration(proxyBeanMethods = false)
 @ConditionalOnWebApplication(type = Type.SERVLET)
 @ConditionalOnClass({ Servlet.class, DispatcherServlet.class })
 // Load before the main WebMvcAutoConfiguration so that the error View is available
@@ -92,17 +91,8 @@ public class ErrorMvcAutoConfiguration {
 
 	private final ServerProperties serverProperties;
 
-	private final DispatcherServletPath dispatcherServletPath;
-
-	private final List<ErrorViewResolver> errorViewResolvers;
-
-	public ErrorMvcAutoConfiguration(ServerProperties serverProperties,
-			DispatcherServletPath dispatcherServletPath,
-			ObjectProvider<ErrorViewResolver> errorViewResolvers) {
+	public ErrorMvcAutoConfiguration(ServerProperties serverProperties) {
 		this.serverProperties = serverProperties;
-		this.dispatcherServletPath = dispatcherServletPath;
-		this.errorViewResolvers = errorViewResolvers.orderedStream()
-				.collect(Collectors.toList());
 	}
 
 	@Bean
@@ -114,14 +104,16 @@ public class ErrorMvcAutoConfiguration {
 
 	@Bean
 	@ConditionalOnMissingBean(value = ErrorController.class, search = SearchStrategy.CURRENT)
-	public BasicErrorController basicErrorController(ErrorAttributes errorAttributes) {
+	public BasicErrorController basicErrorController(ErrorAttributes errorAttributes,
+			ObjectProvider<ErrorViewResolver> errorViewResolvers) {
 		return new BasicErrorController(errorAttributes, this.serverProperties.getError(),
-				this.errorViewResolvers);
+				errorViewResolvers.orderedStream().collect(Collectors.toList()));
 	}
 
 	@Bean
-	public ErrorPageCustomizer errorPageCustomizer() {
-		return new ErrorPageCustomizer(this.serverProperties, this.dispatcherServletPath);
+	public ErrorPageCustomizer errorPageCustomizer(
+			DispatcherServletPath dispatcherServletPath) {
+		return new ErrorPageCustomizer(this.serverProperties, dispatcherServletPath);
 	}
 
 	@Bean
@@ -129,7 +121,7 @@ public class ErrorMvcAutoConfiguration {
 		return new PreserveErrorControllerTargetClassPostProcessor();
 	}
 
-	@Configuration
+	@Configuration(proxyBeanMethods = false)
 	static class DefaultErrorViewResolverConfiguration {
 
 		private final ApplicationContext applicationContext;
@@ -152,7 +144,7 @@ public class ErrorMvcAutoConfiguration {
 
 	}
 
-	@Configuration
+	@Configuration(proxyBeanMethods = false)
 	@ConditionalOnProperty(prefix = "server.error.whitelabel", name = "enabled", matchIfMissing = true)
 	@Conditional(ErrorTemplateMissingCondition.class)
 	protected static class WhitelabelErrorViewConfiguration {

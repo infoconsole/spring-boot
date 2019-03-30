@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -38,7 +38,7 @@ public class InitializrServiceTests extends AbstractHttpClientMockTests {
 	@Test
 	public void loadMetadata() throws Exception {
 		mockSuccessfulMetadataGet(false);
-		InitializrServiceMetadata metadata = this.invoker.loadMetadata("http://foo/bar");
+		InitializrServiceMetadata metadata = this.invoker.loadMetadata("https://foo/bar");
 		assertThat(metadata).isNotNull();
 	}
 

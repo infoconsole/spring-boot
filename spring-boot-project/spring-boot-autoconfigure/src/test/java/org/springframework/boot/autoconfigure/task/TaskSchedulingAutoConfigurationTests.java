@@ -1,11 +1,11 @@
 /*
- * Copyright 2012-2018 the original author or authors.
+ * Copyright 2012-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -59,11 +59,18 @@ public class TaskSchedulingAutoConfigurationTests {
 	public void enableSchedulingWithNoTaskExecutorAutoConfiguresOne() {
 		this.contextRunner
 				.withPropertyValues(
+						"spring.task.scheduling.shutdown.await-termination=true",
+						"spring.task.scheduling.shutdown.await-termination-period=30s",
 						"spring.task.scheduling.thread-name-prefix=scheduling-test-")
 				.withUserConfiguration(SchedulingConfiguration.class).run((context) -> {
 					assertThat(context).hasSingleBean(TaskExecutor.class);
+					TaskExecutor taskExecutor = context.getBean(TaskExecutor.class);
 					TestBean bean = context.getBean(TestBean.class);
 					Thread.sleep(15);
+					assertThat(taskExecutor).hasFieldOrPropertyWithValue(
+							"waitForTasksToCompleteOnShutdown", true);
+					assertThat(taskExecutor)
+							.hasFieldOrPropertyWithValue("awaitTerminationSeconds", 30);
 					assertThat(bean.threadNames)
 							.allMatch((name) -> name.contains("scheduling-test-"));
 				});
@@ -122,13 +129,13 @@ public class TaskSchedulingAutoConfigurationTests {
 				});
 	}
 
-	@Configuration
+	@Configuration(proxyBeanMethods = false)
 	@EnableScheduling
 	static class SchedulingConfiguration {
 
 	}
 
-	@Configuration
+	@Configuration(proxyBeanMethods = false)
 	static class TaskSchedulerConfiguration {
 
 		@Bean
@@ -138,7 +145,7 @@ public class TaskSchedulingAutoConfigurationTests {
 
 	}
 
-	@Configuration
+	@Configuration(proxyBeanMethods = false)
 	static class ScheduledExecutorServiceConfiguration {
 
 		@Bean
@@ -148,7 +155,7 @@ public class TaskSchedulingAutoConfigurationTests {
 
 	}
 
-	@Configuration
+	@Configuration(proxyBeanMethods = false)
 	static class TaskSchedulerCustomizerConfiguration {
 
 		@Bean
@@ -159,7 +166,7 @@ public class TaskSchedulingAutoConfigurationTests {
 
 	}
 
-	@Configuration
+	@Configuration(proxyBeanMethods = false)
 	static class SchedulingConfigurerConfiguration implements SchedulingConfigurer {
 
 		private final TaskScheduler taskScheduler = new TestTaskScheduler();
@@ -171,7 +178,7 @@ public class TaskSchedulingAutoConfigurationTests {
 
 	}
 
-	@Configuration
+	@Configuration(proxyBeanMethods = false)
 	static class TestConfiguration {
 
 		@Bean

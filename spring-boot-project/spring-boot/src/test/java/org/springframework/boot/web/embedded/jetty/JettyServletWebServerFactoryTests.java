@@ -1,11 +1,11 @@
 /*
- * Copyright 2012-2018 the original author or authors.
+ * Copyright 2012-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -21,6 +21,7 @@ import java.nio.charset.Charset;
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Locale;
 import java.util.Map;
 
@@ -209,7 +210,7 @@ public class JettyServletWebServerFactoryTests
 	@Test
 	public void wrappedHandlers() throws Exception {
 		JettyServletWebServerFactory factory = getFactory();
-		factory.setServerCustomizers(Arrays.asList((server) -> {
+		factory.setServerCustomizers(Collections.singletonList((server) -> {
 			Handler handler = server.getHandler();
 			HandlerWrapper wrapper = new HandlerWrapper();
 			wrapper.setHandler(handler);
@@ -306,12 +307,12 @@ public class JettyServletWebServerFactoryTests
 			contexts.iterator().next().addEventListener(new ServletContextListener() {
 
 				@Override
-				public void contextInitialized(ServletContextEvent sce) {
+				public void contextInitialized(ServletContextEvent event) {
 					throw new RuntimeException();
 				}
 
 				@Override
-				public void contextDestroyed(ServletContextEvent sce) {
+				public void contextDestroyed(ServletContextEvent event) {
 				}
 
 			});

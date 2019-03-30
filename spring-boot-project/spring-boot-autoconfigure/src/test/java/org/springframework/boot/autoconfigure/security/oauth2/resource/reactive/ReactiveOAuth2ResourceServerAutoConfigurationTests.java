@@ -1,11 +1,11 @@
 /*
- * Copyright 2012-2018 the original author or authors.
+ * Copyright 2012-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -21,12 +21,12 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Stream;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
 import org.junit.After;
 import org.junit.Test;
-import org.testcontainers.shaded.com.fasterxml.jackson.core.JsonProcessingException;
-import org.testcontainers.shaded.com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.springframework.boot.autoconfigure.AutoConfigurations;
 import org.springframework.boot.test.context.FilteredClassLoader;
@@ -80,7 +80,7 @@ public class ReactiveOAuth2ResourceServerAutoConfigurationTests {
 	@Test
 	public void autoConfigurationShouldConfigureResourceServer() {
 		this.contextRunner.withPropertyValues(
-				"spring.security.oauth2.resourceserver.jwt.jwk-set-uri=http://jwk-set-uri.com")
+				"spring.security.oauth2.resourceserver.jwt.jwk-set-uri=https://jwk-set-uri.com")
 				.run((context) -> {
 					assertThat(context.getBean(ReactiveJwtDecoder.class))
 							.isInstanceOf(NimbusReactiveJwtDecoder.class);
@@ -110,8 +110,8 @@ public class ReactiveOAuth2ResourceServerAutoConfigurationTests {
 	@Test
 	public void autoConfigurationWhenBothSetUriAndIssuerUriPresentShouldUseSetUri() {
 		this.contextRunner.withPropertyValues(
-				"spring.security.oauth2.resourceserver.jwt.jwk-set-uri=http://jwk-set-uri.com",
-				"spring.security.oauth2.resourceserver.jwt.issuer-uri=http://jwk-oidc-issuer-location.com")
+				"spring.security.oauth2.resourceserver.jwt.jwk-set-uri=https://jwk-set-uri.com",
+				"spring.security.oauth2.resourceserver.jwt.issuer-uri=https://jwk-oidc-issuer-location.com")
 				.run((context) -> {
 					assertThat(context.getBean(ReactiveJwtDecoder.class))
 							.isInstanceOf(NimbusReactiveJwtDecoder.class);
@@ -130,7 +130,7 @@ public class ReactiveOAuth2ResourceServerAutoConfigurationTests {
 	@Test
 	public void jwtDecoderBeanIsConditionalOnMissingBean() {
 		this.contextRunner.withPropertyValues(
-				"spring.security.oauth2.resourceserver.jwt.jwk-set-uri=http://jwk-set-uri.com")
+				"spring.security.oauth2.resourceserver.jwt.jwk-set-uri=https://jwk-set-uri.com")
 				.withUserConfiguration(JwtDecoderConfig.class)
 				.run((this::assertFilterConfiguredWithJwtAuthenticationManager));
 	}
@@ -138,7 +138,7 @@ public class ReactiveOAuth2ResourceServerAutoConfigurationTests {
 	@Test
 	public void jwtDecoderByIssuerUriBeanIsConditionalOnMissingBean() {
 		this.contextRunner.withPropertyValues(
-				"spring.security.oauth2.resourceserver.jwt.issuer-uri=http://jwk-oidc-issuer-location.com")
+				"spring.security.oauth2.resourceserver.jwt.issuer-uri=https://jwk-oidc-issuer-location.com")
 				.withUserConfiguration(JwtDecoderConfig.class)
 				.run((this::assertFilterConfiguredWithJwtAuthenticationManager));
 	}
@@ -146,7 +146,7 @@ public class ReactiveOAuth2ResourceServerAutoConfigurationTests {
 	@Test
 	public void autoConfigurationShouldBeConditionalOnBearerTokenAuthenticationTokenClass() {
 		this.contextRunner.withPropertyValues(
-				"spring.security.oauth2.resourceserver.jwt.jwk-set-uri=http://jwk-set-uri.com")
+				"spring.security.oauth2.resourceserver.jwt.jwk-set-uri=https://jwk-set-uri.com")
 				.withUserConfiguration(JwtDecoderConfig.class)
 				.withClassLoader(
 						new FilteredClassLoader(BearerTokenAuthenticationToken.class))
@@ -157,7 +157,7 @@ public class ReactiveOAuth2ResourceServerAutoConfigurationTests {
 	@Test
 	public void autoConfigurationShouldBeConditionalOnReactiveJwtDecoderClass() {
 		this.contextRunner.withPropertyValues(
-				"spring.security.oauth2.resourceserver.jwt.jwk-set-uri=http://jwk-set-uri.com")
+				"spring.security.oauth2.resourceserver.jwt.jwk-set-uri=https://jwk-set-uri.com")
 				.withUserConfiguration(JwtDecoderConfig.class)
 				.withClassLoader(new FilteredClassLoader(ReactiveJwtDecoder.class))
 				.run((context) -> assertThat(context)
@@ -167,7 +167,7 @@ public class ReactiveOAuth2ResourceServerAutoConfigurationTests {
 	@Test
 	public void autoConfigurationWhenSecurityWebFilterChainConfigPresentShouldNotAddOne() {
 		this.contextRunner.withPropertyValues(
-				"spring.security.oauth2.resourceserver.jwt.jwk-set-uri=http://jwk-set-uri.com")
+				"spring.security.oauth2.resourceserver.jwt.jwk-set-uri=https://jwk-set-uri.com")
 				.withUserConfiguration(SecurityWebFilterChainConfig.class)
 				.run((context) -> {
 					assertThat(context).hasSingleBean(SecurityWebFilterChain.class);
@@ -236,7 +236,7 @@ public class ReactiveOAuth2ResourceServerAutoConfigurationTests {
 
 	}
 
-	@Configuration
+	@Configuration(proxyBeanMethods = false)
 	static class JwtDecoderConfig {
 
 		@Bean
@@ -246,7 +246,7 @@ public class ReactiveOAuth2ResourceServerAutoConfigurationTests {
 
 	}
 
-	@Configuration
+	@Configuration(proxyBeanMethods = false)
 	static class SecurityWebFilterChainConfig {
 
 		@Bean

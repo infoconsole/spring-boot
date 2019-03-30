@@ -1,11 +1,11 @@
 /*
- * Copyright 2012-2018 the original author or authors.
+ * Copyright 2012-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -38,7 +38,6 @@ import org.springframework.context.event.ContextClosedEvent;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
-import org.springframework.util.FileCopyUtils;
 import org.springframework.util.StringUtils;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -125,7 +124,7 @@ public class RestarterTests {
 	}
 
 	@Test
-	public void addClassLoaderFiles() throws Exception {
+	public void addClassLoaderFiles() {
 		ClassLoaderFiles classLoaderFiles = new ClassLoaderFiles();
 		classLoaderFiles.addFile("f", new ClassLoaderFile(Kind.ADDED, "abc".getBytes()));
 		Restarter restarter = Restarter.getInstance();
@@ -133,8 +132,7 @@ public class RestarterTests {
 		restarter.restart();
 		ClassLoader classLoader = ((TestableRestarter) restarter)
 				.getRelaunchClassLoader();
-		assertThat(FileCopyUtils.copyToByteArray(classLoader.getResourceAsStream("f")))
-				.isEqualTo("abc".getBytes());
+		assertThat(classLoader.getResourceAsStream("f")).hasContent("abc");
 	}
 
 	@Test
@@ -174,13 +172,6 @@ public class RestarterTests {
 		given(initializer.getInitialUrls(any(Thread.class))).willReturn(urls);
 		Restarter.initialize(new String[0], false, initializer, false);
 		assertThat(Restarter.getInstance().getInitialUrls()).isEqualTo(urls);
-	}
-
-	@FunctionalInterface
-	private interface WithMainAction {
-
-		void perform() throws Exception;
-
 	}
 
 	@Component

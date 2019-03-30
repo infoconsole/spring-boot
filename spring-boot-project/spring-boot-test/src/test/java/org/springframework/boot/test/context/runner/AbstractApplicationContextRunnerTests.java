@@ -1,11 +1,11 @@
 /*
- * Copyright 2012-2018 the original author or authors.
+ * Copyright 2012-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -37,8 +37,8 @@ import org.springframework.core.type.AnnotatedTypeMetadata;
 import org.springframework.util.ClassUtils;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.assertj.core.api.Assertions.assertThatIOException;
-import static org.junit.Assert.fail;
 
 /**
  * Abstract tests for {@link AbstractApplicationContextRunner} implementations.
@@ -152,16 +152,9 @@ public abstract class AbstractApplicationContextRunnerTests<T extends AbstractAp
 	@Test
 	public void runWithClassLoaderShouldSetClassLoaderOnContext() {
 		get().withClassLoader(new FilteredClassLoader(Gson.class.getPackage().getName()))
-				.run((context) -> {
-					try {
-						ClassUtils.forName(Gson.class.getName(),
-								context.getClassLoader());
-						fail("Should have thrown a ClassNotFoundException");
-					}
-					catch (ClassNotFoundException ex) {
-						// expected
-					}
-				});
+				.run((context) -> assertThatExceptionOfType(ClassNotFoundException.class)
+						.isThrownBy(() -> ClassUtils.forName(Gson.class.getName(),
+								context.getClassLoader())));
 	}
 
 	@Test
@@ -185,7 +178,7 @@ public abstract class AbstractApplicationContextRunnerTests<T extends AbstractAp
 		throw new IOException(message);
 	}
 
-	@Configuration
+	@Configuration(proxyBeanMethods = false)
 	static class FailingConfig {
 
 		@Bean
@@ -195,7 +188,7 @@ public abstract class AbstractApplicationContextRunnerTests<T extends AbstractAp
 
 	}
 
-	@Configuration
+	@Configuration(proxyBeanMethods = false)
 	static class FooConfig {
 
 		@Bean
@@ -205,7 +198,7 @@ public abstract class AbstractApplicationContextRunnerTests<T extends AbstractAp
 
 	}
 
-	@Configuration
+	@Configuration(proxyBeanMethods = false)
 	static class BarConfig {
 
 		@Bean
@@ -215,7 +208,7 @@ public abstract class AbstractApplicationContextRunnerTests<T extends AbstractAp
 
 	}
 
-	@Configuration
+	@Configuration(proxyBeanMethods = false)
 	@Conditional(FilteredClassLoaderCondition.class)
 	static class ConditionalConfig {
 

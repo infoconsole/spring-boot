@@ -1,11 +1,11 @@
 /*
- * Copyright 2012-2018 the original author or authors.
+ * Copyright 2012-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -33,7 +33,6 @@ import org.apache.commons.compress.archivers.ArchiveEntry;
 import org.gradle.testkit.runner.BuildResult;
 import org.gradle.testkit.runner.GradleRunner;
 import org.jetbrains.kotlin.cli.common.PropertiesKt;
-import org.jetbrains.kotlin.compilerRunner.KotlinCompilerRunner;
 import org.jetbrains.kotlin.gradle.model.KotlinProject;
 import org.jetbrains.kotlin.gradle.plugin.KotlinGradleSubplugin;
 import org.jetbrains.kotlin.gradle.plugin.KotlinPlugin;
@@ -139,7 +138,6 @@ public class GradleBuild implements TestRule {
 				new File(pathOfJarContaining(ClassVisitor.class)),
 				new File(pathOfJarContaining(DependencyManagementPlugin.class)),
 				new File(pathOfJarContaining(PropertiesKt.class)),
-				new File(pathOfJarContaining(KotlinCompilerRunner.class)),
 				new File(pathOfJarContaining(KotlinPlugin.class)),
 				new File(pathOfJarContaining(KotlinProject.class)),
 				new File(pathOfJarContaining(KotlinGradleSubplugin.class)),
@@ -193,7 +191,7 @@ public class GradleBuild implements TestRule {
 			gradleRunner.withGradleVersion(this.gradleVersion);
 		}
 		else if (this.dsl == Dsl.KOTLIN) {
-			gradleRunner.withGradleVersion("4.10.2");
+			gradleRunner.withGradleVersion("4.10.3");
 		}
 		List<String> allArguments = new ArrayList<>();
 		allArguments.add("-PbootVersion=" + getBootVersion());

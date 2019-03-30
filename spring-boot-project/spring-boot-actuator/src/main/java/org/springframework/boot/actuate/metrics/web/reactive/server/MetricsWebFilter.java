@@ -1,11 +1,11 @@
 /*
- * Copyright 2012-2018 the original author or authors.
+ * Copyright 2012-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -47,20 +47,6 @@ public class MetricsWebFilter implements WebFilter {
 	private final String metricName;
 
 	private final boolean autoTimeRequests;
-
-	/**
-	 * Create a new {@code MetricsWebFilter}.
-	 * @param registry the registry to which metrics are recorded
-	 * @param tagsProvider provider for metrics tags
-	 * @param metricName name of the metric to record
-	 * @deprecated since 2.0.6 in favor of
-	 * {@link #MetricsWebFilter(MeterRegistry, WebFluxTagsProvider, String, boolean)}
-	 */
-	@Deprecated
-	public MetricsWebFilter(MeterRegistry registry, WebFluxTagsProvider tagsProvider,
-			String metricName) {
-		this(registry, tagsProvider, metricName, true);
-	}
 
 	public MetricsWebFilter(MeterRegistry registry, WebFluxTagsProvider tagsProvider,
 			String metricName, boolean autoTimeRequests) {

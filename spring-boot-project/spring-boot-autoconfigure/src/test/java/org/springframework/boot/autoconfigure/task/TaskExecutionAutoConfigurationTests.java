@@ -1,11 +1,11 @@
 /*
- * Copyright 2012-2018 the original author or authors.
+ * Copyright 2012-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -38,6 +38,7 @@ import org.springframework.core.task.TaskExecutor;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.AsyncResult;
 import org.springframework.scheduling.annotation.EnableAsync;
+import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.test.util.ReflectionTestUtils;
 
@@ -49,6 +50,7 @@ import static org.mockito.Mockito.verify;
  * Tests for {@link TaskExecutionAutoConfiguration}.
  *
  * @author Stephane Nicoll
+ * @author Camille Vienot
  */
 public class TaskExecutionAutoConfigurationTests {
 
@@ -67,6 +69,8 @@ public class TaskExecutionAutoConfigurationTests {
 						"spring.task.execution.pool.max-size=4",
 						"spring.task.execution.pool.allow-core-thread-timeout=true",
 						"spring.task.execution.pool.keep-alive=5s",
+						"spring.task.execution.shutdown.await-termination=true",
+						"spring.task.execution.shutdown.await-termination-period=30s",
 						"spring.task.execution.thread-name-prefix=mytest-")
 				.run(assertTaskExecutor((taskExecutor) -> {
 					assertThat(taskExecutor).hasFieldOrPropertyWithValue("queueCapacity",
@@ -76,6 +80,10 @@ public class TaskExecutionAutoConfigurationTests {
 					assertThat(taskExecutor)
 							.hasFieldOrPropertyWithValue("allowCoreThreadTimeOut", true);
 					assertThat(taskExecutor.getKeepAliveSeconds()).isEqualTo(5);
+					assertThat(taskExecutor).hasFieldOrPropertyWithValue(
+							"waitForTasksToCompleteOnShutdown", true);
+					assertThat(taskExecutor)
+							.hasFieldOrPropertyWithValue("awaitTerminationSeconds", 30);
 					assertThat(taskExecutor.getThreadNamePrefix()).isEqualTo("mytest-");
 				}));
 	}
@@ -151,6 +159,21 @@ public class TaskExecutionAutoConfigurationTests {
 				});
 	}
 
+	@Test
+	public void enableAsyncUsesAutoConfiguredOneByDefaultEvenThoughSchedulingIsConfigured() {
+		this.contextRunner
+				.withPropertyValues("spring.task.execution.thread-name-prefix=task-test-")
+				.withConfiguration(
+						AutoConfigurations.of(TaskSchedulingAutoConfiguration.class))
+				.withUserConfiguration(AsyncConfiguration.class,
+						SchedulingConfiguration.class, TestBean.class)
+				.run((context) -> {
+					TestBean bean = context.getBean(TestBean.class);
+					String text = bean.echo("something").get();
+					assertThat(text).contains("task-test-").contains("something");
+				});
+	}
+
 	private ContextConsumer<AssertableApplicationContext> assertTaskExecutor(
 			Consumer<ThreadPoolTaskExecutor> taskExecutor) {
 		return (context) -> {
@@ -160,7 +183,7 @@ public class TaskExecutionAutoConfigurationTests {
 		};
 	}
 
-	@Configuration
+	@Configuration(proxyBeanMethods = false)
 	static class CustomTaskExecutorBuilderConfig {
 
 		private final TaskExecutorBuilder taskExecutorBuilder = new TaskExecutorBuilder();
@@ -172,7 +195,7 @@ public class TaskExecutionAutoConfigurationTests {
 
 	}
 
-	@Configuration
+	@Configuration(proxyBeanMethods = false)
 	static class TaskExecutorCustomizerConfig {
 
 		@Bean
@@ -182,7 +205,7 @@ public class TaskExecutionAutoConfigurationTests {
 
 	}
 
-	@Configuration
+	@Configuration(proxyBeanMethods = false)
 	static class TaskDecoratorConfig {
 
 		@Bean
@@ -192,7 +215,7 @@ public class TaskExecutionAutoConfigurationTests {
 
 	}
 
-	@Configuration
+	@Configuration(proxyBeanMethods = false)
 	static class CustomTaskExecutorConfig {
 
 		@Bean
@@ -202,9 +225,15 @@ public class TaskExecutionAutoConfigurationTests {
 
 	}
 
-	@Configuration
+	@Configuration(proxyBeanMethods = false)
 	@EnableAsync
 	static class AsyncConfiguration {
+
+	}
+
+	@Configuration(proxyBeanMethods = false)
+	@EnableScheduling
+	static class SchedulingConfiguration {
 
 	}
 

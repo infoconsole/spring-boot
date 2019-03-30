@@ -1,11 +1,11 @@
 /*
- * Copyright 2012-2018 the original author or authors.
+ * Copyright 2012-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -137,7 +137,7 @@ import org.springframework.web.servlet.view.InternalResourceViewResolver;
  * @author Bruce Brouwer
  * @author Artsiom Yudovin
  */
-@Configuration
+@Configuration(proxyBeanMethods = false)
 @ConditionalOnWebApplication(type = Type.SERVLET)
 @ConditionalOnClass({ Servlet.class, DispatcherServlet.class, WebMvcConfigurer.class })
 @ConditionalOnMissingBean(WebMvcConfigurationSupport.class)
@@ -168,7 +168,7 @@ public class WebMvcAutoConfiguration {
 
 	// Defined as a nested config to ensure WebMvcConfigurer is not read when not
 	// on the classpath
-	@Configuration
+	@Configuration(proxyBeanMethods = false)
 	@Import(EnableWebMvcConfiguration.class)
 	@EnableConfigurationProperties({ WebMvcProperties.class, ResourceProperties.class })
 	@Order(0)
@@ -401,11 +401,12 @@ public class WebMvcAutoConfiguration {
 		@Bean
 		@ConditionalOnMissingBean({ RequestContextListener.class,
 				RequestContextFilter.class })
+		@ConditionalOnMissingFilterBean(RequestContextFilter.class)
 		public static RequestContextFilter requestContextFilter() {
 			return new OrderedRequestContextFilter();
 		}
 
-		@Configuration
+		@Configuration(proxyBeanMethods = false)
 		@ConditionalOnProperty(value = "spring.mvc.favicon.enabled", matchIfMissing = true)
 		public static class FaviconConfiguration implements ResourceLoaderAware {
 
@@ -423,19 +424,17 @@ public class WebMvcAutoConfiguration {
 			}
 
 			@Bean
-			public SimpleUrlHandlerMapping faviconHandlerMapping() {
+			public SimpleUrlHandlerMapping faviconHandlerMapping(
+					FaviconRequestHandler handler) {
 				SimpleUrlHandlerMapping mapping = new SimpleUrlHandlerMapping();
 				mapping.setOrder(Ordered.HIGHEST_PRECEDENCE + 1);
-				mapping.setUrlMap(Collections.singletonMap("**/favicon.ico",
-						faviconRequestHandler()));
+				mapping.setUrlMap(Collections.singletonMap("**/favicon.ico", handler));
 				return mapping;
 			}
 
 			@Bean
-			public ResourceHttpRequestHandler faviconRequestHandler() {
-				ResourceHttpRequestHandler requestHandler = new ResourceHttpRequestHandler();
-				requestHandler.setLocations(resolveFaviconLocations());
-				return requestHandler;
+			public FaviconRequestHandler faviconRequestHandler() {
+				return new FaviconRequestHandler(resolveFaviconLocations());
 			}
 
 			private List<Resource> resolveFaviconLocations() {
@@ -446,6 +445,14 @@ public class WebMvcAutoConfiguration {
 						.forEach(locations::add);
 				locations.add(new ClassPathResource("/"));
 				return Collections.unmodifiableList(locations);
+			}
+
+		}
+
+		static final class FaviconRequestHandler extends ResourceHttpRequestHandler {
+
+			FaviconRequestHandler(List<Resource> locations) {
+				setLocations(locations);
 			}
 
 		}
@@ -581,7 +588,7 @@ public class WebMvcAutoConfiguration {
 
 	}
 
-	@Configuration
+	@Configuration(proxyBeanMethods = false)
 	@ConditionalOnEnabledResourceChain
 	static class ResourceChainCustomizerConfiguration {
 

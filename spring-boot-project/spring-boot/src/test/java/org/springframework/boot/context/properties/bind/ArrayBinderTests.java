@@ -1,11 +1,11 @@
 /*
- * Copyright 2012-2018 the original author or authors.
+ * Copyright 2012-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -32,7 +32,7 @@ import org.springframework.boot.context.properties.source.MockConfigurationPrope
 import org.springframework.core.ResolvableType;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.fail;
+import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isA;
@@ -145,18 +145,16 @@ public class ArrayBinderTests {
 		source.put("foo[1]", "1");
 		source.put("foo[3]", "3");
 		this.sources.add(source);
-		try {
-			this.binder.bind("foo", INTEGER_ARRAY);
-			fail("No exception thrown");
-		}
-		catch (BindException ex) {
-			Set<ConfigurationProperty> unbound = ((UnboundConfigurationPropertiesException) ex
-					.getCause()).getUnboundProperties();
-			assertThat(unbound.size()).isEqualTo(1);
-			ConfigurationProperty property = unbound.iterator().next();
-			assertThat(property.getName().toString()).isEqualTo("foo[3]");
-			assertThat(property.getValue()).isEqualTo("3");
-		}
+		assertThatExceptionOfType(BindException.class)
+				.isThrownBy(() -> this.binder.bind("foo", INTEGER_ARRAY))
+				.satisfies((ex) -> {
+					Set<ConfigurationProperty> unbound = ((UnboundConfigurationPropertiesException) ex
+							.getCause()).getUnboundProperties();
+					assertThat(unbound.size()).isEqualTo(1);
+					ConfigurationProperty property = unbound.iterator().next();
+					assertThat(property.getName().toString()).isEqualTo("foo[3]");
+					assertThat(property.getValue()).isEqualTo("3");
+				});
 	}
 
 	@Test

@@ -1,11 +1,11 @@
 /*
- * Copyright 2012-2018 the original author or authors.
+ * Copyright 2012-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -659,6 +659,37 @@ public class RepackagerTests {
 		Repackager repackager = new Repackager(source);
 		repackager.setMainClass("com.example.Main");
 		repackager.repackage(dest, NO_LIBRARIES);
+	}
+
+	@Test
+	public void moduleInfoClassRemainsInRootOfJarWhenRepackaged() throws Exception {
+		this.testJarFile.addClass("A.class", ClassWithMainMethod.class);
+		this.testJarFile.addClass("module-info.class", ClassWithoutMainMethod.class);
+		File source = this.testJarFile.getFile();
+		File dest = this.temporaryFolder.newFile("dest.jar");
+		Repackager repackager = new Repackager(source);
+		repackager.repackage(dest, NO_LIBRARIES);
+		try (JarFile jarFile = new JarFile(dest)) {
+			assertThat(jarFile.getEntry("module-info.class")).isNotNull();
+			assertThat(jarFile.getEntry("BOOT-INF/classes/module-info.class")).isNull();
+		}
+	}
+
+	@Test
+	public void kotlinModuleMetadataMovesBeneathBootInfClassesWhenRepackaged()
+			throws Exception {
+		this.testJarFile.addClass("A.class", ClassWithMainMethod.class);
+		this.testJarFile.addFile("META-INF/test.kotlin_module",
+				this.temporaryFolder.newFile("test.kotlin_module"));
+		File source = this.testJarFile.getFile();
+		File dest = this.temporaryFolder.newFile("dest.jar");
+		Repackager repackager = new Repackager(source);
+		repackager.repackage(dest, NO_LIBRARIES);
+		try (JarFile jarFile = new JarFile(dest)) {
+			assertThat(jarFile.getEntry("META-INF/test.kotlin_module")).isNull();
+			assertThat(jarFile.getEntry("BOOT-INF/classes/META-INF/test.kotlin_module"))
+					.isNotNull();
+		}
 	}
 
 	private File createLibrary() throws IOException {

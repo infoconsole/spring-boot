@@ -1,11 +1,11 @@
 /*
- * Copyright 2012-2018 the original author or authors.
+ * Copyright 2012-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -56,7 +56,7 @@ import org.springframework.jdbc.datasource.lookup.AbstractRoutingDataSource;
  * @author Arthur Kalimullin
  * @since 2.0.0
  */
-@Configuration
+@Configuration(proxyBeanMethods = false)
 @ConditionalOnClass({ JdbcTemplate.class, AbstractRoutingDataSource.class })
 @ConditionalOnBean(DataSource.class)
 @ConditionalOnEnabledHealthIndicator("db")
@@ -66,18 +66,26 @@ public class DataSourceHealthIndicatorAutoConfiguration extends
 		CompositeHealthIndicatorConfiguration<DataSourceHealthIndicator, DataSource>
 		implements InitializingBean {
 
-	private final Map<String, DataSource> dataSources;
-
 	private final Collection<DataSourcePoolMetadataProvider> metadataProviders;
 
 	private DataSourcePoolMetadataProvider poolMetadataProvider;
 
-	public DataSourceHealthIndicatorAutoConfiguration(
-			ObjectProvider<Map<String, DataSource>> dataSources,
+	public DataSourceHealthIndicatorAutoConfiguration(Map<String, DataSource> dataSources,
 			ObjectProvider<DataSourcePoolMetadataProvider> metadataProviders) {
-		this.dataSources = filterDataSources(dataSources.getIfAvailable());
 		this.metadataProviders = metadataProviders.orderedStream()
 				.collect(Collectors.toList());
+	}
+
+	@Override
+	public void afterPropertiesSet() throws Exception {
+		this.poolMetadataProvider = new CompositeDataSourcePoolMetadataProvider(
+				this.metadataProviders);
+	}
+
+	@Bean
+	@ConditionalOnMissingBean(name = "dbHealthIndicator")
+	public HealthIndicator dbHealthIndicator(Map<String, DataSource> dataSources) {
+		return createHealthIndicator(filterDataSources(dataSources));
 	}
 
 	private Map<String, DataSource> filterDataSources(
@@ -92,18 +100,6 @@ public class DataSourceHealthIndicatorAutoConfiguration extends
 			}
 		});
 		return dataSources;
-	}
-
-	@Override
-	public void afterPropertiesSet() throws Exception {
-		this.poolMetadataProvider = new CompositeDataSourcePoolMetadataProvider(
-				this.metadataProviders);
-	}
-
-	@Bean
-	@ConditionalOnMissingBean(name = "dbHealthIndicator")
-	public HealthIndicator dbHealthIndicator() {
-		return createHealthIndicator(this.dataSources);
 	}
 
 	@Override

@@ -1,11 +1,11 @@
 /*
- * Copyright 2012-2018 the original author or authors.
+ * Copyright 2012-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -17,8 +17,6 @@
 package org.springframework.boot.autoconfigure.mongo;
 
 import java.util.stream.Collectors;
-
-import javax.annotation.PreDestroy;
 
 import com.mongodb.MongoClientSettings;
 import com.mongodb.connection.netty.NettyStreamFactoryFactory;
@@ -44,39 +42,24 @@ import org.springframework.core.env.Environment;
  * @author Stephane Nicoll
  * @since 2.0.0
  */
-@Configuration
+@Configuration(proxyBeanMethods = false)
 @ConditionalOnClass({ MongoClient.class, Flux.class })
 @EnableConfigurationProperties(MongoProperties.class)
 public class MongoReactiveAutoConfiguration {
-
-	private final MongoClientSettings settings;
-
-	private MongoClient mongo;
-
-	public MongoReactiveAutoConfiguration(ObjectProvider<MongoClientSettings> settings) {
-		this.settings = settings.getIfAvailable();
-	}
-
-	@PreDestroy
-	public void close() {
-		if (this.mongo != null) {
-			this.mongo.close();
-		}
-	}
 
 	@Bean
 	@ConditionalOnMissingBean
 	public MongoClient reactiveStreamsMongoClient(MongoProperties properties,
 			Environment environment,
-			ObjectProvider<MongoClientSettingsBuilderCustomizer> builderCustomizers) {
+			ObjectProvider<MongoClientSettingsBuilderCustomizer> builderCustomizers,
+			ObjectProvider<MongoClientSettings> settings) {
 		ReactiveMongoClientFactory factory = new ReactiveMongoClientFactory(properties,
 				environment,
 				builderCustomizers.orderedStream().collect(Collectors.toList()));
-		this.mongo = factory.createMongoClient(this.settings);
-		return this.mongo;
+		return factory.createMongoClient(settings.getIfAvailable());
 	}
 
-	@Configuration
+	@Configuration(proxyBeanMethods = false)
 	@ConditionalOnClass(SocketChannel.class)
 	static class NettyDriverConfiguration {
 

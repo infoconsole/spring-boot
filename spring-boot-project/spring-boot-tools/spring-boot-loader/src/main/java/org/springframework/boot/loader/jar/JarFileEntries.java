@@ -1,11 +1,11 @@
 /*
- * Copyright 2012-2018 the original author or authors.
+ * Copyright 2012-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -63,7 +63,7 @@ class JarFileEntries implements CentralDirectoryVisitor, Iterable<JarEntry> {
 					.invoke(runtimeVersion);
 		}
 		catch (Throwable ex) {
-			version = 8;
+			version = BASE_VERSION;
 		}
 		RUNTIME_VERSION = version;
 	}
@@ -305,8 +305,7 @@ class JarFileEntries implements CentralDirectoryVisitor, Iterable<JarEntry> {
 		int index = getFirstIndex(hashCode);
 		while (index >= 0 && index < this.size && this.hashCodes[index] == hashCode) {
 			T entry = getEntry(index, type, cacheEntry, nameAlias);
-			if (entry.hasName((nameAlias != null) ? nameAlias.toString() : name,
-					suffix)) {
+			if (entry.hasName(name, suffix)) {
 				return entry;
 			}
 			index++;

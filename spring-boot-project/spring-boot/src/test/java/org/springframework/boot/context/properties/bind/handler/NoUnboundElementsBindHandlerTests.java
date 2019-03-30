@@ -1,11 +1,11 @@
 /*
- * Copyright 2012-2017 the original author or authors.
+ * Copyright 2012-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -30,7 +30,7 @@ import org.springframework.boot.context.properties.source.ConfigurationPropertyS
 import org.springframework.boot.context.properties.source.MockConfigurationPropertySource;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.fail;
+import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 
 /**
  * Tests for {@link NoUnboundElementsBindHandler}.
@@ -75,15 +75,11 @@ public class NoUnboundElementsBindHandlerTests {
 		source.put("example.baz", "bar");
 		this.sources.add(source);
 		this.binder = new Binder(this.sources);
-		try {
-			this.binder.bind("example", Bindable.of(Example.class),
-					new NoUnboundElementsBindHandler());
-			fail("did not throw");
-		}
-		catch (BindException ex) {
-			assertThat(ex.getCause().getMessage())
-					.contains("The elements [example.baz] were left unbound");
-		}
+		assertThatExceptionOfType(BindException.class)
+				.isThrownBy(() -> this.binder.bind("example", Bindable.of(Example.class),
+						new NoUnboundElementsBindHandler()))
+				.satisfies((ex) -> assertThat(ex.getCause().getMessage())
+						.contains("The elements [example.baz] were left unbound"));
 	}
 
 	@Test
@@ -112,6 +108,35 @@ public class NoUnboundElementsBindHandlerTests {
 		assertThat(bound.getFoo()).isEqualTo("bar");
 	}
 
+	@Test
+	public void bindWhenUsingNoUnboundElementsHandlerShouldBindIfUnboundCollectionProperties() {
+		MockConfigurationPropertySource source1 = new MockConfigurationPropertySource();
+		source1.put("example.foo[0]", "bar");
+		MockConfigurationPropertySource source2 = new MockConfigurationPropertySource();
+		source2.put("example.foo[0]", "bar");
+		source2.put("example.foo[1]", "baz");
+		this.sources.add(source1);
+		this.sources.add(source2);
+		this.binder = new Binder(this.sources);
+		NoUnboundElementsBindHandler handler = new NoUnboundElementsBindHandler();
+		ExampleWithList bound = this.binder
+				.bind("example", Bindable.of(ExampleWithList.class), handler).get();
+		assertThat(bound.getFoo()).containsExactly("bar");
+	}
+
+	@Test
+	public void bindWhenUsingNoUnboundElementsHandlerAndUnboundListElementsShouldThrowException() {
+		MockConfigurationPropertySource source = new MockConfigurationPropertySource();
+		source.put("example.foo[0]", "bar");
+		this.sources.add(source);
+		this.binder = new Binder(this.sources);
+		assertThatExceptionOfType(BindException.class)
+				.isThrownBy(() -> this.binder.bind("example", Bindable.of(Example.class),
+						new NoUnboundElementsBindHandler()))
+				.satisfies((ex) -> assertThat(ex.getCause().getMessage())
+						.contains("The elements [example.foo[0]] were left unbound"));
+	}
+
 	public static class Example {
 
 		private String foo;
@@ -121,6 +146,20 @@ public class NoUnboundElementsBindHandlerTests {
 		}
 
 		public void setFoo(String foo) {
+			this.foo = foo;
+		}
+
+	}
+
+	public static class ExampleWithList {
+
+		private List<String> foo;
+
+		public List<String> getFoo() {
+			return this.foo;
+		}
+
+		public void setFoo(List<String> foo) {
 			this.foo = foo;
 		}
 

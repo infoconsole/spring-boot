@@ -1,11 +1,11 @@
 /*
- * Copyright 2012-2018 the original author or authors.
+ * Copyright 2012-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -26,12 +26,15 @@ import org.eclipse.jetty.server.ConnectionFactory;
 import org.eclipse.jetty.server.HttpConnectionFactory;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.SslConnectionFactory;
+import org.eclipse.jetty.util.ssl.SslContextFactory;
 import org.junit.Test;
 
 import org.springframework.boot.web.server.Http2;
 import org.springframework.boot.web.server.Ssl;
+import org.springframework.boot.web.server.WebServerException;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 
 /**
  * Tests for {@link SslServerCustomizer}.
@@ -76,6 +79,20 @@ public class SslServerCustomizerTests {
 				server.getConnectors()[0].getConnectionFactories());
 		assertThat(((ALPNServerConnectionFactory) factories.get(1)).getDefaultProtocol())
 				.isNull();
+	}
+
+	@Test
+	public void configureSslWhenSslIsEnabledWithNoKeyStoreThrowsWebServerException() {
+		Ssl ssl = new Ssl();
+		SslServerCustomizer customizer = new SslServerCustomizer(null, ssl, null, null);
+		assertThatExceptionOfType(Exception.class)
+				.isThrownBy(
+						() -> customizer.configureSsl(new SslContextFactory(), ssl, null))
+				.satisfies((ex) -> {
+					assertThat(ex).isInstanceOf(WebServerException.class);
+					assertThat(ex)
+							.hasMessageContaining("Could not load key store 'null'");
+				});
 	}
 
 	private Server createCustomizedServer() {

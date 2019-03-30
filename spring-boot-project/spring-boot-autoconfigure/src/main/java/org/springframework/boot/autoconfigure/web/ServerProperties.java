@@ -1,11 +1,11 @@
 /*
- * Copyright 2012-2018 the original author or authors.
+ * Copyright 2012-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -30,7 +30,6 @@ import java.util.Map;
 import java.util.TimeZone;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
-import org.springframework.boot.context.properties.DeprecatedConfigurationProperty;
 import org.springframework.boot.context.properties.NestedConfigurationProperty;
 import org.springframework.boot.convert.DurationUnit;
 import org.springframework.boot.web.server.Compression;
@@ -57,6 +56,7 @@ import org.springframework.util.unit.DataSize;
  * @author Olivier Lamy
  * @author Chentao Qu
  * @author Artsiom Yudovin
+ * @author Andrew McGhie
  */
 @ConfigurationProperties(prefix = "server", ignoreUnknownFields = true)
 public class ServerProperties {
@@ -232,10 +232,11 @@ public class ServerProperties {
 		}
 
 		private String cleanContextPath(String contextPath) {
-			if (StringUtils.hasText(contextPath) && contextPath.endsWith("/")) {
-				return contextPath.substring(0, contextPath.length() - 1);
+			String candidate = StringUtils.trimWhitespace(contextPath);
+			if (StringUtils.hasText(candidate) && candidate.endsWith("/")) {
+				return candidate.substring(0, candidate.length() - 1);
 			}
-			return contextPath;
+			return candidate;
 		}
 
 		public String getApplicationDisplayName() {
@@ -329,11 +330,6 @@ public class ServerProperties {
 		 * Maximum size of the HTTP post content.
 		 */
 		private DataSize maxHttpPostSize = DataSize.ofMegabytes(2);
-
-		/**
-		 * Maximum size of the HTTP message header.
-		 */
-		private DataSize maxHttpHeaderSize = DataSize.ofBytes(0);
 
 		/**
 		 * Maximum amount of request body to swallow.
@@ -504,17 +500,6 @@ public class ServerProperties {
 			this.maxConnections = maxConnections;
 		}
 
-		@Deprecated
-		@DeprecatedConfigurationProperty(replacement = "server.max-http-header-size")
-		public DataSize getMaxHttpHeaderSize() {
-			return this.maxHttpHeaderSize;
-		}
-
-		@Deprecated
-		public void setMaxHttpHeaderSize(DataSize maxHttpHeaderSize) {
-			this.maxHttpHeaderSize = maxHttpHeaderSize;
-		}
-
 		public DataSize getMaxSwallowSize() {
 			return this.maxSwallowSize;
 		}
@@ -562,6 +547,18 @@ public class ServerProperties {
 			private boolean enabled = false;
 
 			/**
+			 * Whether logging of the request will only be enabled if
+			 * "ServletRequest.getAttribute(conditionIf)" does not yield null.
+			 */
+			private String conditionIf;
+
+			/**
+			 * Whether logging of the request will only be enabled if
+			 * "ServletRequest.getAttribute(conditionUnless)" yield null.
+			 */
+			private String conditionUnless;
+
+			/**
 			 * Format pattern for access logs.
 			 */
 			private String pattern = "common";
@@ -583,6 +580,24 @@ public class ServerProperties {
 			private String suffix = ".log";
 
 			/**
+			 * Character set used by the log file. Default to the system default character
+			 * set.
+			 */
+			private String encoding;
+
+			/**
+			 * Locale used to format timestamps in log entries and in log file name
+			 * suffix. Default to the default locale of the Java process.
+			 */
+			private String locale;
+
+			/**
+			 * Whether to check for log file existence so it can be recreated it if an
+			 * external process has renamed it.
+			 */
+			private boolean checkExists = false;
+
+			/**
 			 * Whether to enable access log rotation.
 			 */
 			private boolean rotate = true;
@@ -594,9 +609,19 @@ public class ServerProperties {
 			private boolean renameOnRotate = false;
 
 			/**
+			 * Number of days to retain the access log files before they are removed.
+			 */
+			private int maxDays = -1;
+
+			/**
 			 * Date format to place in the log file name.
 			 */
 			private String fileDateFormat = ".yyyy-MM-dd";
+
+			/**
+			 * Whether to use IPv6 canonical representation format as defined by RFC 5952.
+			 */
+			private boolean ipv6Canonical = false;
 
 			/**
 			 * Set request attributes for the IP address, Hostname, protocol, and port
@@ -615,6 +640,22 @@ public class ServerProperties {
 
 			public void setEnabled(boolean enabled) {
 				this.enabled = enabled;
+			}
+
+			public String getConditionIf() {
+				return this.conditionIf;
+			}
+
+			public void setConditionIf(String conditionIf) {
+				this.conditionIf = conditionIf;
+			}
+
+			public String getConditionUnless() {
+				return this.conditionUnless;
+			}
+
+			public void setConditionUnless(String conditionUnless) {
+				this.conditionUnless = conditionUnless;
 			}
 
 			public String getPattern() {
@@ -649,6 +690,30 @@ public class ServerProperties {
 				this.suffix = suffix;
 			}
 
+			public String getEncoding() {
+				return this.encoding;
+			}
+
+			public void setEncoding(String encoding) {
+				this.encoding = encoding;
+			}
+
+			public String getLocale() {
+				return this.locale;
+			}
+
+			public void setLocale(String locale) {
+				this.locale = locale;
+			}
+
+			public boolean isCheckExists() {
+				return this.checkExists;
+			}
+
+			public void setCheckExists(boolean checkExists) {
+				this.checkExists = checkExists;
+			}
+
 			public boolean isRotate() {
 				return this.rotate;
 			}
@@ -665,12 +730,28 @@ public class ServerProperties {
 				this.renameOnRotate = renameOnRotate;
 			}
 
+			public int getMaxDays() {
+				return this.maxDays;
+			}
+
+			public void setMaxDays(int maxDays) {
+				this.maxDays = maxDays;
+			}
+
 			public String getFileDateFormat() {
 				return this.fileDateFormat;
 			}
 
 			public void setFileDateFormat(String fileDateFormat) {
 				this.fileDateFormat = fileDateFormat;
+			}
+
+			public boolean isIpv6Canonical() {
+				return this.ipv6Canonical;
+			}
+
+			public void setIpv6Canonical(boolean ipv6Canonical) {
+				this.ipv6Canonical = ipv6Canonical;
 			}
 
 			public boolean isRequestAttributesEnabled() {

@@ -1,11 +1,11 @@
 /*
- * Copyright 2012-2018 the original author or authors.
+ * Copyright 2012-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,7 +16,6 @@
 
 package org.springframework.boot.web.servlet.support;
 
-import java.util.Arrays;
 import java.util.Collections;
 
 import javax.servlet.ServletContext;
@@ -135,8 +134,8 @@ public class SpringBootServletInitializerTests {
 	@Test
 	public void servletContextPropertySourceIsAvailablePriorToRefresh() {
 		ServletContext servletContext = mock(ServletContext.class);
-		given(servletContext.getInitParameterNames()).willReturn(
-				Collections.enumeration(Arrays.asList("spring.profiles.active")));
+		given(servletContext.getInitParameterNames()).willReturn(Collections
+				.enumeration(Collections.singletonList("spring.profiles.active")));
 		given(servletContext.getInitParameter("spring.profiles.active"))
 				.willReturn("from-servlet-context");
 		given(servletContext.getAttributeNames())
@@ -159,7 +158,7 @@ public class SpringBootServletInitializerTests {
 
 	}
 
-	@Configuration
+	@Configuration(proxyBeanMethods = false)
 	static class TestApp {
 
 	}
@@ -192,7 +191,7 @@ public class SpringBootServletInitializerTests {
 
 	}
 
-	@Configuration
+	@Configuration(proxyBeanMethods = false)
 	public class WithConfigurationAnnotation extends MockSpringBootServletInitializer {
 
 	}
@@ -207,7 +206,7 @@ public class SpringBootServletInitializerTests {
 
 	}
 
-	@Configuration
+	@Configuration(proxyBeanMethods = false)
 	public static class WithErrorPageFilterNotRegistered
 			extends SpringBootServletInitializer {
 
@@ -217,7 +216,7 @@ public class SpringBootServletInitializerTests {
 
 	}
 
-	@Configuration
+	@Configuration(proxyBeanMethods = false)
 	public static class ExecutableWar extends SpringBootServletInitializer {
 
 		@Bean
@@ -227,7 +226,7 @@ public class SpringBootServletInitializerTests {
 
 	}
 
-	@Configuration
+	@Configuration(proxyBeanMethods = false)
 	public static class Config {
 
 	}

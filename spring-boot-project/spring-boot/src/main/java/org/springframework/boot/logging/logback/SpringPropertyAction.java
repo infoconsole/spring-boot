@@ -1,11 +1,11 @@
 /*
- * Copyright 2012-2018 the original author or authors.
+ * Copyright 2012-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -65,17 +65,7 @@ class SpringPropertyAction extends Action {
 			addWarn("No Spring Environment available to resolve " + source);
 			return defaultValue;
 		}
-		String value = this.environment.getProperty(source);
-		if (value != null) {
-			return value;
-		}
-		int lastDot = source.lastIndexOf('.');
-		if (lastDot > 0) {
-			String prefix = source.substring(0, lastDot + 1);
-			return this.environment.getProperty(prefix + source.substring(lastDot + 1),
-					defaultValue);
-		}
-		return defaultValue;
+		return this.environment.getProperty(source, defaultValue);
 	}
 
 	@Override

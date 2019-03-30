@@ -1,11 +1,11 @@
 /*
- * Copyright 2012-2018 the original author or authors.
+ * Copyright 2012-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -38,7 +38,7 @@ import org.springframework.core.env.StandardEnvironment;
 import org.springframework.test.context.support.TestPropertySourceUtils;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.fail;
+import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 
 /**
  * Tests for {@link CollectionBinder}.
@@ -121,18 +121,16 @@ public class CollectionBinderTests {
 		source.put("foo[1]", "1");
 		source.put("foo[3]", "3");
 		this.sources.add(source);
-		try {
-			this.binder.bind("foo", INTEGER_LIST);
-			fail("No exception thrown");
-		}
-		catch (BindException ex) {
-			Set<ConfigurationProperty> unbound = ((UnboundConfigurationPropertiesException) ex
-					.getCause()).getUnboundProperties();
-			assertThat(unbound).hasSize(1);
-			ConfigurationProperty property = unbound.iterator().next();
-			assertThat(property.getName().toString()).isEqualTo("foo[3]");
-			assertThat(property.getValue()).isEqualTo("3");
-		}
+		assertThatExceptionOfType(BindException.class)
+				.isThrownBy(() -> this.binder.bind("foo", INTEGER_LIST))
+				.satisfies((ex) -> {
+					Set<ConfigurationProperty> unbound = ((UnboundConfigurationPropertiesException) ex
+							.getCause()).getUnboundProperties();
+					assertThat(unbound).hasSize(1);
+					ConfigurationProperty property = unbound.iterator().next();
+					assertThat(property.getName().toString()).isEqualTo("foo[3]");
+					assertThat(property.getValue()).isEqualTo("3");
+				});
 	}
 
 	@Test
@@ -142,19 +140,16 @@ public class CollectionBinderTests {
 		source.put("foo[1].value", "2");
 		source.put("foo[4].value", "4");
 		this.sources.add(source);
-		try {
-			Bindable<List<JavaBean>> target = Bindable.listOf(JavaBean.class);
-			this.binder.bind("foo", target);
-			fail("No exception thrown");
-		}
-		catch (BindException ex) {
-			Set<ConfigurationProperty> unbound = ((UnboundConfigurationPropertiesException) ex
-					.getCause()).getUnboundProperties();
-			assertThat(unbound).hasSize(1);
-			ConfigurationProperty property = unbound.iterator().next();
-			assertThat(property.getName().toString()).isEqualTo("foo[4].value");
-			assertThat(property.getValue()).isEqualTo("4");
-		}
+		Bindable<List<JavaBean>> target = Bindable.listOf(JavaBean.class);
+		assertThatExceptionOfType(BindException.class)
+				.isThrownBy(() -> this.binder.bind("foo", target)).satisfies((ex) -> {
+					Set<ConfigurationProperty> unbound = ((UnboundConfigurationPropertiesException) ex
+							.getCause()).getUnboundProperties();
+					assertThat(unbound).hasSize(1);
+					ConfigurationProperty property = unbound.iterator().next();
+					assertThat(property.getName().toString()).isEqualTo("foo[4].value");
+					assertThat(property.getValue()).isEqualTo("4");
+				});
 	}
 
 	@Test
@@ -455,8 +450,8 @@ public class CollectionBinderTests {
 		MockConfigurationPropertySource source = new MockConfigurationPropertySource();
 		source.put("foo.values[0]", "foo-bar,bar-baz");
 		this.sources.add(source);
-		BeanWithEnumsetCollection result = this.binder
-				.bind("foo", Bindable.of(BeanWithEnumsetCollection.class)).get();
+		BeanWithEnumSetCollection result = this.binder
+				.bind("foo", Bindable.of(BeanWithEnumSetCollection.class)).get();
 		assertThat(result.getValues().get(0)).containsExactly(ExampleEnum.FOO_BAR,
 				ExampleEnum.BAR_BAZ);
 	}
@@ -579,7 +574,7 @@ public class CollectionBinderTests {
 
 	}
 
-	public static class BeanWithEnumsetCollection {
+	public static class BeanWithEnumSetCollection {
 
 		private List<EnumSet<ExampleEnum>> values;
 

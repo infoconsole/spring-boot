@@ -1,11 +1,11 @@
 /*
- * Copyright 2012-2018 the original author or authors.
+ * Copyright 2012-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -62,6 +62,7 @@ public class ElasticsearchJestHealthIndicatorTests {
 	}
 
 	@Test
+	@SuppressWarnings("unchecked")
 	public void elasticsearchWithYellowStatusIsUp() throws IOException {
 		given(this.jestClient.execute(any(Action.class)))
 				.willReturn(createJestResult(200, true, "yellow"));
@@ -138,8 +139,8 @@ public class ElasticsearchJestHealthIndicatorTests {
 					status);
 		}
 		else {
-			json = "{\n" + "  \"error\": \"Server Error\",\n" + "  \"status\": "
-					+ responseCode + "\n" + "}";
+			json = "{\n" + "  \"error\": \"Server Error\",\n" + "  \"status\": \""
+					+ status + "\"\n" + "}";
 		}
 		searchResult.setJsonString(json);
 		searchResult.setJsonObject(new JsonParser().parse(json).getAsJsonObject());

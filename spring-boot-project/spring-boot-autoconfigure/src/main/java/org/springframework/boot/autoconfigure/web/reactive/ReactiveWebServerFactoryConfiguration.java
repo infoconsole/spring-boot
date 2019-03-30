@@ -1,11 +1,11 @@
 /*
- * Copyright 2012-2018 the original author or authors.
+ * Copyright 2012-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -47,7 +47,7 @@ import org.springframework.http.client.reactive.ReactorResourceFactory;
  */
 abstract class ReactiveWebServerFactoryConfiguration {
 
-	@Configuration
+	@Configuration(proxyBeanMethods = false)
 	@ConditionalOnMissingBean(ReactiveWebServerFactory.class)
 	@ConditionalOnClass({ HttpServer.class })
 	static class EmbeddedNetty {
@@ -68,7 +68,7 @@ abstract class ReactiveWebServerFactoryConfiguration {
 
 	}
 
-	@Configuration
+	@Configuration(proxyBeanMethods = false)
 	@ConditionalOnMissingBean(ReactiveWebServerFactory.class)
 	@ConditionalOnClass({ org.apache.catalina.startup.Tomcat.class })
 	static class EmbeddedTomcat {
@@ -87,7 +87,7 @@ abstract class ReactiveWebServerFactoryConfiguration {
 
 	}
 
-	@Configuration
+	@Configuration(proxyBeanMethods = false)
 	@ConditionalOnMissingBean(ReactiveWebServerFactory.class)
 	@ConditionalOnClass({ org.eclipse.jetty.server.Server.class })
 	static class EmbeddedJetty {
@@ -108,6 +108,7 @@ abstract class ReactiveWebServerFactoryConfiguration {
 
 	}
 
+	@Configuration(proxyBeanMethods = false)
 	@ConditionalOnMissingBean(ReactiveWebServerFactory.class)
 	@ConditionalOnClass({ Undertow.class })
 	static class EmbeddedUndertow {
