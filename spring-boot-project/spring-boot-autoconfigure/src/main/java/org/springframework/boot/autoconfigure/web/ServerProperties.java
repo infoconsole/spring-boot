@@ -30,6 +30,7 @@ import java.util.Map;
 import java.util.TimeZone;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.boot.context.properties.DeprecatedConfigurationProperty;
 import org.springframework.boot.context.properties.NestedConfigurationProperty;
 import org.springframework.boot.convert.DurationUnit;
 import org.springframework.boot.web.server.Compression;
@@ -78,6 +79,11 @@ public class ServerProperties {
 	 * Whether X-Forwarded-* headers should be applied to the HttpRequest.
 	 */
 	private Boolean useForwardHeaders;
+
+	/**
+	 * Strategy for handling X-Forwarded-* headers.
+	 */
+	private ForwardHeadersStrategy forwardHeadersStrategy = ForwardHeadersStrategy.NONE;
 
 	/**
 	 * Value to use for the Server response header (if empty, no header is sent).
@@ -129,12 +135,18 @@ public class ServerProperties {
 		this.address = address;
 	}
 
+	@DeprecatedConfigurationProperty
 	public Boolean isUseForwardHeaders() {
-		return this.useForwardHeaders;
+		return ForwardHeadersStrategy.NATIVE.equals(this.forwardHeadersStrategy);
 	}
 
 	public void setUseForwardHeaders(Boolean useForwardHeaders) {
-		this.useForwardHeaders = useForwardHeaders;
+		if (useForwardHeaders != null && useForwardHeaders) {
+			this.forwardHeadersStrategy = ForwardHeadersStrategy.NATIVE;
+		}
+		else {
+			this.forwardHeadersStrategy = ForwardHeadersStrategy.NONE;
+		}
 	}
 
 	public String getServerHeader() {
@@ -195,6 +207,14 @@ public class ServerProperties {
 
 	public Undertow getUndertow() {
 		return this.undertow;
+	}
+
+	public ForwardHeadersStrategy getForwardHeadersStrategy() {
+		return this.forwardHeadersStrategy;
+	}
+
+	public void setForwardHeadersStrategy(ForwardHeadersStrategy forwardHeadersStrategy) {
+		this.forwardHeadersStrategy = forwardHeadersStrategy;
 	}
 
 	/**
@@ -368,7 +388,8 @@ public class ServerProperties {
 
 		/**
 		 * Maximum number of idle processors that will be retained in the cache and reused
-		 * with a subsequent request.
+		 * with a subsequent request. When set to -1 the cache will be unlimited with a
+		 * theoretical maximum size equal to the maximum number of connections.
 		 */
 		private int processorCache = 200;
 
@@ -1204,6 +1225,25 @@ public class ServerProperties {
 			}
 
 		}
+
+	}
+
+	public enum ForwardHeadersStrategy {
+
+		/**
+		 * Use the underlying container's native support for forwarded headers.
+		 */
+		NATIVE,
+
+		/**
+		 * Use Spring's support for handling forwarded headers.
+		 */
+		FRAMEWORK,
+
+		/**
+		 * Ignore X-Forwarded-* headers.
+		 */
+		NONE
 
 	}
 

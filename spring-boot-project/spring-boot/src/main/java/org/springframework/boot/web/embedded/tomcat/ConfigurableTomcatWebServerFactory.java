@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2018 the original author or authors.
+ * Copyright 2012-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -67,6 +67,14 @@ public interface ConfigurableTomcatWebServerFactory extends ConfigurableWebServe
 	 * @param tomcatContextCustomizers the customizers to add
 	 */
 	void addContextCustomizers(TomcatContextCustomizer... tomcatContextCustomizers);
+
+	/**
+	 * Add {@link TomcatProtocolHandlerCustomizer}s that should be added to the Tomcat
+	 * {@link Connector}.
+	 * @param tomcatProtocolHandlerCustomizers the customizers to add
+	 */
+	void addProtocolHandlerCustomizers(
+			TomcatProtocolHandlerCustomizer<?>... tomcatProtocolHandlerCustomizers);
 
 	/**
 	 * Set the character encoding to use for URL decoding. If not specified 'UTF-8' will

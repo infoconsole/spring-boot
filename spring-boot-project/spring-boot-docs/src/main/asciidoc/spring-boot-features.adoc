@@ -119,6 +119,10 @@ on `SpringApplicationBuilder` or the `setLazyInitialization` method on
 	spring.main.lazy-initialization=true
 ----
 
+TIP: If you want to disable lazy initialization for certain beans while using lazy
+initialization for the rest of the application, you can explicitly set their lazy attribute
+to false using the `@Lazy(false)` annotation.
+
 
 
 [[boot-features-banner]]
@@ -1009,7 +1013,7 @@ the following example:
 	import java.util.List;
 
 	import org.springframework.boot.context.properties.ConfigurationProperties;
-	import org.springframework.boot.context.properties.ConfigurationPropertyDefaultValue;
+	import org.springframework.boot.context.properties.DefaultValue;
 
 	@ConfigurationProperties("acme")
 	public class AcmeProperties {
@@ -1041,7 +1045,7 @@ the following example:
 			private final List<String> roles;
 
 			public Security(String username, String password,
-					@ConfigurationPropertyDefaultValue("USER") List<String> roles) {
+					@DefaultValue("USER") List<String> roles) {
 				this.username = username;
 				this.password = password;
 				this.roles = roles;
@@ -1061,9 +1065,8 @@ the following example:
 In this setup one, and only one constructor must be defined with the list of properties
 that you wish to bind and not other properties than the ones in the constructor are bound.
 
-Default values can be specified using `@ConfigurationPropertyDefaultValue` and the same
-conversion service will be applied to coerce the `String` value to the target type of a
-missing property.
+Default values can be specified using `@DefaultValue` and the same conversion service will
+be applied to coerce the `String` value to the target type of a missing property.
 
 
 
@@ -1438,7 +1441,7 @@ available:
 `@DurationUnit` has been specified)
 * The standard ISO-8601 format
 {java-javadoc}/java/time/Duration.html#parse-java.lang.CharSequence-[used by
-`java.util.Duration`]
+`java.time.Duration`]
 * A more readable format where the value and the unit are coupled (e.g. `10s` means 10
 seconds)
 
@@ -3433,6 +3436,83 @@ both clients and servers.
 You can learn more about the resource configuration on the client side in the
 <<boot-features-webclient-runtime, WebClient Runtime section>>.
 
+[[boot-features-rsocket]]
+== RSocket
+
+https://rsocket.io[RSocket] is a binary protocol for use on byte stream transports.
+It enables symmetric interaction models via async message passing over a single connection.
+
+Spring Framework, with the Spring Messaging module supports RSocket both on the server and
+the client side. On the server side, it lets you create special `@Controller` beans
+to handle incoming RSocket messages.
+Methods in your controller are mapped to RSocket routes by using `@MessageMapping` annotations.
+
+The following code shows a typical `@Controller`:
+
+[source,java,indent=0]
+----
+	@Controller
+	public class MyRSocketController {
+
+		@MessageMapping("chat.room.{name}")
+		public Flux<ChatMessages> enterChatRoom(@DestinationVariable String chatRoom,
+				Flux<ChatMessages> messages) {
+			// ...
+		}
+
+		@MessageMapping("users.{user}.info")
+		Mono<ChatUserInfo> getUserInfo(@DestinationVariable String user) {
+			// ...
+		}
+
+	}
+----
+
+[[boot-features-rsocket-server-auto-configuration]]
+=== RSocket server Auto-configuration
+Spring Boot provides auto-configuration for RSocket servers. The required dependencies
+are provided by the `spring-boot-starter-rsocket`.
+
+Spring Boot will start an RSocket server as a new embedded server in your application,
+or will plug the RSocket infrastructure into an existing reactive Web server. This
+depends on the type of application and its configuration.
+
+In case of a WebFlux application (i.e. of type `WebApplicationType.REACTIVE`), the
+RSocket server will be plugged into the existing Web Server only if the following
+properties match:
+
+[source,properties,indent=0,subs="verbatim,quotes,attributes"]
+----
+	spring.rsocket.server.mapping-path=/rsocket # a mapping path is defined
+	spring.rsocket.server.transport=websocket # websocket is chosen as a transport
+	#spring.rsocket.server.port= # no port is defined
+----
+
+The only other way to create an RSocket server is to start an independent, embedded
+RSocket server. Besides the dependency requirements, the only required configuration
+is to define a port for that server:
+
+[source,properties,indent=0,subs="verbatim,quotes,attributes"]
+----
+	spring.rsocket.server.port=9898 # the only required configuration
+	spring.rsocket.server.transport=tcp # you're free to configure other properties
+----
+
+
+
+[[boot-features-rsocket-messaging]]
+=== Spring Messaging RSocket support
+Spring Boot will auto-configure the Spring Messaging infrastructure for RSocket.
+
+An `RSocketStrategies` bean is created to provide encoding and decoding support
+for RSocket messages. By default, Spring Boot will try to auto-configure JSON
+support with Jackson for `application/json` and `"application/*+json"` media types.
+Check out the <<boot-features-json-jackson,Jackson support section>> to know more
+about customization possibilities.
+
+Developers can create `RSocketStrategiesCustomizer` beans to add other strategies,
+assuming there are `Encoder` and `Decoder` implementations available.
+
 
 
 [[boot-features-security]]
@@ -3652,6 +3732,12 @@ as shown in the following examples:
 ----
 	spring.security.oauth2.resourceserver.jwt.issuer-uri=https://dev-123456.oktapreview.com/oauth2/default/
 ----
+
+NOTE: If the authorization server does not support a JWK Set URI, you can configure the
+resource server with the Public Key used for verifying the signature of the JWT. This can
+be done using the `spring.security.oauth2.resourceserver.jwt.public-key-location` property,
+where the value needs to point to a file containing the public key in the PEM-encoded x509
+format.
 
 The same properties are applicable for both servlet and reactive applications.
 
@@ -4695,17 +4781,18 @@ https://www.elastic.co/products/elasticsearch[Elasticsearch] is an open source,
 distributed, RESTful search and analytics engine. Spring Boot offers basic
 auto-configuration for Elasticsearch.
 
-Spring Boot supports several HTTP clients:
+Spring Boot supports several clients:
 
 * The official Java "Low Level" and "High Level" REST clients
 * https://github.com/searchbox-io/Jest[Jest]
 
-The transport client is still being used by
-https://github.com/spring-projects/spring-data-elasticsearch[Spring Data Elasticsearch],
-which you can start using with the `spring-boot-starter-data-elasticsearch` "`Starter`".
+The transport client is still available but its support has been deprecated in
+https://github.com/spring-projects/spring-data-elasticsearch[Spring Data Elasticsearch]
+and will be removed in a future release. Spring Boot provides a dedicated "`Starter`",
+`spring-boot-starter-data-elasticsearch`.
 
 [[boot-features-connecting-to-elasticsearch-rest]]
-==== Connecting to Elasticsearch by REST clients
+==== Connecting to Elasticsearch using REST clients
 Elasticsearch ships
 https://www.elastic.co/guide/en/elasticsearch/client/java-rest/current/index.html[two different REST clients]
 that you can use to query a cluster: the "Low Level" client and the "High Level" client.
@@ -4732,7 +4819,10 @@ any existing `RestClient` bean, reusing its HTTP configuration.
 
 
 [[boot-features-connecting-to-elasticsearch-jest]]
-==== Connecting to Elasticsearch by Using Jest
+==== Connecting to Elasticsearch using Jest
+Now that Spring Boot supports the official `RestHighLevelClient`, Jest support is
+deprecated.
+
 If you have `Jest` on the classpath, you can inject an auto-configured `JestClient` that
 by default targets `http://localhost:9200`. You can further tune how the client is
 configured, as shown in the following example:
@@ -7038,6 +7128,11 @@ implementation:
 	}
 ----
 
+NOTE: `@MockBean` cannot be used to mock the behavior of a bean that's exercised during
+application context refresh. By the time the test is executed, the application context refresh
+has completed and it is too late to configure the mocked behavior. We recommend using a `@Bean`
+method to create and configure the mock in this situation.
+
 Additionally, you can use `@SpyBean` to wrap any existing bean with a Mockito `spy`. See
 the {dc-spring-boot-test}/mock/mockito/SpyBean.{dc-ext}[Javadoc] for full details.
 
@@ -8006,7 +8101,7 @@ by the test slice.
 [source,java,indent=0]
 ----
 	@Component
-	public class TestWebMvcConfigurer extends WebMvcConfigurer {
+	public class TestWebMvcConfigurer implements WebMvcConfigurer {
 		...
 	}
 ----

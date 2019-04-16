@@ -110,7 +110,7 @@ public class TomcatWebServerFactoryCustomizer implements
 				.to((maxConnections) -> customizeMaxConnections(factory, maxConnections));
 		propertyMapper.from(tomcatProperties::getAcceptCount).when(this::isPositive)
 				.to((acceptCount) -> customizeAcceptCount(factory, acceptCount));
-		propertyMapper.from(tomcatProperties::getProcessorCache).when(this::isPositive)
+		propertyMapper.from(tomcatProperties::getProcessorCache)
 				.to((processorCache) -> customizeProcessorCache(factory, processorCache));
 		customizeStaticResources(factory);
 		customizeErrorReportValve(properties.getError(), factory);
@@ -133,9 +133,12 @@ public class TomcatWebServerFactoryCustomizer implements
 
 	private void customizeProcessorCache(ConfigurableTomcatWebServerFactory factory,
 			int processorCache) {
-		factory.addConnectorCustomizers((
-				connector) -> ((AbstractHttp11Protocol<?>) connector.getProtocolHandler())
-						.setProcessorCache(processorCache));
+		factory.addConnectorCustomizers((connector) -> {
+			ProtocolHandler handler = connector.getProtocolHandler();
+			if (handler instanceof AbstractProtocol) {
+				((AbstractProtocol<?>) handler).setProcessorCache(processorCache);
+			}
+		});
 	}
 
 	private void customizeMaxConnections(ConfigurableTomcatWebServerFactory factory,
@@ -185,11 +188,13 @@ public class TomcatWebServerFactoryCustomizer implements
 	}
 
 	private boolean getOrDeduceUseForwardHeaders() {
-		if (this.serverProperties.isUseForwardHeaders() != null) {
-			return this.serverProperties.isUseForwardHeaders();
+		if (this.serverProperties.getForwardHeadersStrategy()
+				.equals(ServerProperties.ForwardHeadersStrategy.NONE)) {
+			CloudPlatform platform = CloudPlatform.getActive(this.environment);
+			return platform != null && platform.isUsingForwardHeaders();
 		}
-		CloudPlatform platform = CloudPlatform.getActive(this.environment);
-		return platform != null && platform.isUsingForwardHeaders();
+		return this.serverProperties.getForwardHeadersStrategy()
+				.equals(ServerProperties.ForwardHeadersStrategy.NATIVE);
 	}
 
 	@SuppressWarnings("rawtypes")

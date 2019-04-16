@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2018 the original author or authors.
+ * Copyright 2012-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,7 +35,9 @@ import org.springframework.util.StringUtils;
  * @author Binwei Yang
  * @author Andy Wilkinson
  * @since 2.0.0
+ * @deprecated the transport client support is deprecated in favor of other clients
  */
+@Deprecated
 public class ElasticsearchHealthIndicator extends AbstractHealthIndicator {
 
 	private static final String[] ALL_INDICES = { "_all" };

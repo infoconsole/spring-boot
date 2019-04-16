@@ -306,13 +306,23 @@
 			<optional>true</optional>
 		</dependency>
 		<dependency>
-				<groupId>io.micrometer</groupId>
-				<artifactId>micrometer-registry-wavefront</artifactId>
+			<groupId>io.micrometer</groupId>
+			<artifactId>micrometer-registry-wavefront</artifactId>
 			<optional>true</optional>
 		</dependency>
 		<dependency>
 			<groupId>io.projectreactor.netty</groupId>
 			<artifactId>reactor-netty</artifactId>
+			<optional>true</optional>
+		</dependency>
+		<dependency>
+			<groupId>io.rsocket</groupId>
+			<artifactId>rsocket-core</artifactId>
+			<optional>true</optional>
+		</dependency>
+		<dependency>
+			<groupId>io.rsocket</groupId>
+			<artifactId>rsocket-transport-netty</artifactId>
 			<optional>true</optional>
 		</dependency>
 		<dependency>
@@ -1419,6 +1429,7 @@
 								<spring-docs-version>${spring.version}</spring-docs-version>
 								<spring-boot-version>${revision}</spring-boot-version>
 								<sources-root>${project.basedir}/src/</sources-root>
+								<generated-resources-root>${project.basedir}/target/generated-resources</generated-resources-root>
 							</attributes>
 						</configuration>
 						<executions>

@@ -164,9 +164,8 @@ class TypeUtils {
 				return this.types.getDeclaredType(this.env.getElementUtils()
 						.getTypeElement(Object.class.getName()));
 			}
-			else { // return type argument to Collection<...>
-				return declaredType.getTypeArguments().get(0);
-			}
+			// return type argument to Collection<...>
+			return declaredType.getTypeArguments().get(0);
 		}
 
 		// recursively walk the supertypes, looking for Collection<...>
@@ -305,15 +304,28 @@ class TypeUtils {
 			TypeMirror typeMirror = descriptor.resolveGeneric(t);
 			if (typeMirror != null) {
 				if (typeMirror instanceof TypeVariable) {
-					// Still unresolved, let's use upper bound
-					return visit(((TypeVariable) typeMirror).getUpperBound(), descriptor);
+					TypeVariable typeVariable = (TypeVariable) typeMirror;
+					// Still unresolved, let's use the upper bound, checking first if
+					// a cycle may exist
+					if (!hasCycle(typeVariable)) {
+						return visit(typeVariable.getUpperBound(), descriptor);
+					}
 				}
 				else {
 					return visit(typeMirror, descriptor);
 				}
 			}
-			// Unresolved generics, use upper bound
-			return visit(t.getUpperBound(), descriptor);
+			// Fallback to simple representation of the upper bound
+			return defaultAction(t.getUpperBound(), descriptor);
+		}
+
+		private boolean hasCycle(TypeVariable variable) {
+			TypeMirror upperBound = variable.getUpperBound();
+			if (upperBound instanceof DeclaredType) {
+				return ((DeclaredType) upperBound).getTypeArguments().stream()
+						.anyMatch((candidate) -> candidate.equals(variable));
+			}
+			return false;
 		}
 
 		@Override

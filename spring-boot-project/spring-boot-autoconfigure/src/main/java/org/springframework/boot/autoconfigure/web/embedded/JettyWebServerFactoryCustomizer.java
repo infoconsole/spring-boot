@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2018 the original author or authors.
+ * Copyright 2012-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -68,8 +68,7 @@ public class JettyWebServerFactoryCustomizer implements
 	public void customize(ConfigurableJettyWebServerFactory factory) {
 		ServerProperties properties = this.serverProperties;
 		ServerProperties.Jetty jettyProperties = properties.getJetty();
-		factory.setUseForwardHeaders(
-				getOrDeduceUseForwardHeaders(properties, this.environment));
+		factory.setUseForwardHeaders(getOrDeduceUseForwardHeaders());
 		PropertyMapper propertyMapper = PropertyMapper.get();
 		propertyMapper.from(jettyProperties::getAcceptors).whenNonNull()
 				.to(factory::setAcceptors);
@@ -95,13 +94,14 @@ public class JettyWebServerFactoryCustomizer implements
 		return value > 0;
 	}
 
-	private boolean getOrDeduceUseForwardHeaders(ServerProperties serverProperties,
-			Environment environment) {
-		if (serverProperties.isUseForwardHeaders() != null) {
-			return serverProperties.isUseForwardHeaders();
+	private boolean getOrDeduceUseForwardHeaders() {
+		if (this.serverProperties.getForwardHeadersStrategy()
+				.equals(ServerProperties.ForwardHeadersStrategy.NONE)) {
+			CloudPlatform platform = CloudPlatform.getActive(this.environment);
+			return platform != null && platform.isUsingForwardHeaders();
 		}
-		CloudPlatform platform = CloudPlatform.getActive(environment);
-		return platform != null && platform.isUsingForwardHeaders();
+		return this.serverProperties.getForwardHeadersStrategy()
+				.equals(ServerProperties.ForwardHeadersStrategy.NATIVE);
 	}
 
 	private void customizeConnectionTimeout(ConfigurableJettyWebServerFactory factory,

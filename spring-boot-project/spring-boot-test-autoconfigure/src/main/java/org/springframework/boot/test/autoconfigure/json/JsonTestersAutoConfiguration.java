@@ -118,7 +118,7 @@ public class JsonTestersAutoConfiguration {
 	/**
 	 * {@link FactoryBean} used to create JSON Tester instances.
 	 */
-	private static class JsonTesterFactoryBean<T, M> implements FactoryBean<T> {
+	static class JsonTesterFactoryBean<T, M> implements FactoryBean<T> {
 
 		private final Class<?> objectType;
 
@@ -127,7 +127,6 @@ public class JsonTestersAutoConfiguration {
 		JsonTesterFactoryBean(Class<?> objectType, M marshaller) {
 			this.objectType = objectType;
 			this.marshaller = marshaller;
-
 		}
 
 		@Override
@@ -166,7 +165,7 @@ public class JsonTestersAutoConfiguration {
 	/**
 	 * {@link BeanPostProcessor} used to initialize JSON testers.
 	 */
-	private static class JsonMarshalTestersBeanPostProcessor
+	static class JsonMarshalTestersBeanPostProcessor
 			extends InstantiationAwareBeanPostProcessorAdapter {
 
 		@Override

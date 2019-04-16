@@ -137,6 +137,36 @@ public abstract class AbstractApplicationContextRunnerTests<T extends AbstractAp
 	}
 
 	@Test
+	public void runWithUserNamedBeanShouldRegisterBean() {
+		get().withBean("foo", String.class, () -> "foo")
+				.run((context) -> assertThat(context).hasBean("foo"));
+	}
+
+	@Test
+	public void runWithUserBeanShouldRegisterBeanWithDefaultName() {
+		get().withBean(String.class, () -> "foo")
+				.run((context) -> assertThat(context).hasBean("string"));
+	}
+
+	@Test
+	public void runWithUserBeanShouldBeRegisteredInOrder() {
+		get().withBean(String.class, () -> "one").withBean(String.class, () -> "two")
+				.withBean(String.class, () -> "three").run((context) -> {
+					assertThat(context).hasBean("string");
+					assertThat(context.getBean("string")).isEqualTo("three");
+				});
+	}
+
+	@Test
+	public void runWithConfigurationsAndUserBeanShouldRegisterUserBeanLast() {
+		get().withUserConfiguration(FooConfig.class)
+				.withBean("foo", String.class, () -> "overridden").run((context) -> {
+					assertThat(context).hasBean("foo");
+					assertThat(context.getBean("foo")).isEqualTo("overridden");
+				});
+	}
+
+	@Test
 	public void runWithMultipleConfigurationsShouldRegisterAllConfigurations() {
 		get().withUserConfiguration(FooConfig.class)
 				.withConfiguration(UserConfigurations.of(BarConfig.class))

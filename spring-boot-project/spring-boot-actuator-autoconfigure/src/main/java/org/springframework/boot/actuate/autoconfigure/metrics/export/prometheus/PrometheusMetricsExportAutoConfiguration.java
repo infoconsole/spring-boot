@@ -48,6 +48,7 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.env.Environment;
+import org.springframework.core.log.LogMessage;
 
 /**
  * {@link EnableAutoConfiguration Auto-configuration} for exporting metrics to Prometheus.
@@ -62,7 +63,8 @@ import org.springframework.core.env.Environment;
 @AutoConfigureAfter(MetricsAutoConfiguration.class)
 @ConditionalOnBean(Clock.class)
 @ConditionalOnClass(PrometheusMeterRegistry.class)
-@ConditionalOnProperty(prefix = "management.metrics.export.prometheus", name = "enabled", havingValue = "true", matchIfMissing = true)
+@ConditionalOnProperty(prefix = "management.metrics.export.prometheus", name = "enabled",
+		havingValue = "true", matchIfMissing = true)
 @EnableConfigurationProperties(PrometheusProperties.class)
 public class PrometheusMetricsExportAutoConfiguration {
 
@@ -106,7 +108,8 @@ public class PrometheusMetricsExportAutoConfiguration {
 	 */
 	@Configuration(proxyBeanMethods = false)
 	@ConditionalOnClass(PushGateway.class)
-	@ConditionalOnProperty(prefix = "management.metrics.export.prometheus.pushgateway", name = "enabled")
+	@ConditionalOnProperty(prefix = "management.metrics.export.prometheus.pushgateway",
+			name = "enabled")
 	public static class PrometheusPushGatewayConfiguration {
 
 		private static final Log logger = LogFactory
@@ -140,7 +143,7 @@ public class PrometheusMetricsExportAutoConfiguration {
 				return new PushGateway(new URL(url));
 			}
 			catch (MalformedURLException ex) {
-				logger.warn(String.format(
+				logger.warn(LogMessage.format(
 						"Invalid PushGateway base url '%s': update your configuration to a valid URL",
 						url));
 				return new PushGateway(url);
